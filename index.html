@@ -161,18 +161,17 @@ if(k==='junk')return{t:k,n:pick(['รองเท้าเก่า','ขวด�
 if(k==='chest')return{t:k,n:'หีบสมบัติ',v:20+z*15+ri(20),d:.45+z*.05};
 if(k==='amber')return{t:k,n:'อำพันแมว',v:0,d:.55+z*.05};
 return{t:'mon',n:pick(['ปูหนามเหล็ก','ปลาไหลเงา','หมึกคลั่ง','งูทะเลเสียงหวีด']),v:30+z*20,d:0,hp:3+z*2}}
-function pushBeat(){const p=R.beats[R.beats.length-1],i=p.i+1;let x,k=0;const span=1.4+R.d*2.4;
-do{x=cl(p.x+(Math.random()<.5?-1:1)*(1+Math.random()*span),-3.3,3.3)}while(Math.abs(x-p.x)<.9&&++k<20);
-const rest=i<2||Math.random()<.18-R.d*.1,q=Math.random(),type=q<.07?'heart':q<.13?'time':q<.22?'coin':'n';
-R.beats.push({i,tm:i*R.bi,x,c:!rest,type,done:rest})}
+const fishX=tm=>3.2*Math.sin(2*Math.PI*tm/(8*R.bi));
+function pushBeat(){const p=R.beats[R.beats.length-1],i=p.i+1,tm=i*R.bi;
+const rest=i<2||Math.random()<.3-R.d*.15,q=Math.random(),type=q<.07?'heart':q<.13?'time':q<.22?'coin':'n';
+R.beats.push({i,tm,x:fishX(tm),c:!rest,type,done:rest})}
 const ease=u=>u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2;
 function upReel(dt){R.fx-=dt;R.paw-=dt;R.jump-=dt;R.jt-=dt;R.time-=dt;R.clock+=dt;
 if(R.time<=0){toast(item.n+'ดิ้นหลุด หมดเวลา',1800);setMode('idle');return}
 while(R.beats[R.beats.length-1].tm<R.clock+4*R.bi)pushBeat();
-let a=R.beats[0],b=R.beats[1];for(let i=0;i<R.beats.length-1;i++){if(R.beats[i].tm<=R.clock&&R.beats[i+1].tm>R.clock){a=R.beats[i];b=R.beats[i+1];break}}
-const u=R.clock<0?0:cl((R.clock-a.tm)/R.bi,0,1),nx=a.x+(b.x-a.x)*ease(u);R.ang=nx>R.lx?0:Math.PI;R.lx=nx;
+const nx=fishX(Math.max(0,R.clock));R.ang=nx>=R.lx?0:Math.PI;R.lx=nx;
 for(const bt of R.beats)if(bt.c&&!bt.done&&R.clock>bt.tm+R.win){bt.done=true;R.combo=0;R.judge='หลุดจังหวะ';R.jt=.5}
-R.beats=R.beats.filter(bt=>bt.tm>R.clock-2*R.bi||bt===a);R.pops=R.pops.filter(p=>(p.t-=dt)>0)}
+R.beats=R.beats.filter((bt,i,arr)=>bt.tm>R.clock-2*R.bi||i===arr.length-1);R.pops=R.pops.filter(p=>(p.t-=dt)>0)}
 const onC=()=>R.beats.find(bt=>bt.c&&!bt.done&&Math.abs(R.clock-bt.tm)<R.win);
 function strike(){if(mode!=='reel'||R.fx>.1)return;const c=onC();
 if(c){c.done=true;const df=Math.abs(R.clock-c.tm),perfect=df<.07;R.pops.push({x:c.x,z:10,t:.45});
