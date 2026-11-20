@@ -499,7 +499,7 @@ try{localStorage.removeItem('nekofish1')}catch(err){}S={coins:0,rod:1,boat:1,amb
 const el=tg.closest('.card');if(el&&sheet==='cards'){const c=S.cards.find(x=>x.id===el.dataset.id);if(!c||c.ret)return;
 const i=S.crew.indexOf(c.id);if(i>=0)S.crew.splice(i,1);else if(crewCards().length<S.boat)S.crew.push(c.id);else{toast('เรือเต็มแล้ว อัปเกรดเรือเพื่อเพิ่มที่นั่ง');return}
 save();renderSheet()}});
-modal.addEventListener('click',e=>{if(e.target===modal&&sheet!=='amber')closeSheet()});
+modal.addEventListener('click',e=>{if(e.target===modal&&sheet!=='amber'&&sheet!=='result'&&sheet!=='reveal')closeSheet()});
 fit();setMode('port');toast(awayMsg||(S.cards.length?'แตะของบนท่าเรือ หรือแตะเรือเพื่อออกทะเล':'แตะลังอำพันบนท่าเรือเพื่อรับแมวตัวแรก'),3500);save();requestAnimationFrame(loop);
 }
 </script></body></html>
