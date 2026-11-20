@@ -109,8 +109,8 @@ else{rar=0;lv=1}
 return{id:Date.now().toString(36)+ri(1e6).toString(36),n:pick(NM1)+pick(NM2),a,b,rar,lv,lives:9,dives:0,best:0,ret:0}}
 
 function catSVG(c){
-const A=TR[c.a],B=c.b>=0?TR[c.b]:null,c1=A.c,c2=B?B.c:c1,pt=A.p||(B&&B.p);
-return`<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M20 40 L17 9 L40 28Z" fill="${c1}" stroke="#0003"/><path d="M80 40 L83 9 L60 28Z" fill="${c2}" stroke="#0003"/><ellipse cx="50" cy="54" rx="34" ry="30" fill="${c1}" stroke="#0003"/>${B?`<path d="M50 24 A34 30 0 0 1 50 84Z" fill="${c2}"/>`:''}${pt?`<ellipse cx="50" cy="64" rx="15" ry="12" fill="${pt}" opacity=".8"/>`:''}<ellipse cx="37" cy="51" rx="6.5" ry="7.5" fill="${A.e}"/><ellipse cx="63" cy="51" rx="6.5" ry="7.5" fill="${B?B.e:A.e}"/><ellipse cx="37" cy="52" rx="2" ry="5.5" fill="#111"/><ellipse cx="63" cy="52" rx="2" ry="5.5" fill="#111"/><path d="M46.5 61 L53.5 61 L50 65Z" fill="#e58a9a"/><path d="M50 65 Q45 70 41 67 M50 65 Q55 70 59 67" stroke="#0008" fill="none" stroke-width="1.5"/></svg>`}
+const A=TR[c.a],B=c.b>=0?TR[c.b]:null,c1=A.c,c2=B?B.c:c1,pt=A.p||(B&&B.p),e1=pt||c1,e2=pt||c2;
+return`<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M20 40 L17 9 L40 28Z" fill="${e1}" stroke="#0003"/><path d="M80 40 L83 9 L60 28Z" fill="${e2}" stroke="#0003"/><path d="M23 30 L21 15 L33 26Z" fill="#f2a5b3" opacity=".8"/><path d="M77 30 L79 15 L67 26Z" fill="#f2a5b3" opacity=".8"/><ellipse cx="50" cy="54" rx="34" ry="30" fill="${c1}" stroke="#0003"/>${B?`<path d="M50 24 A34 30 0 0 1 50 84Z" fill="${c2}"/>`:''}<circle cx="37" cy="52" r="5" fill="#222"/><circle cx="63" cy="52" r="5" fill="#222"/><circle cx="38.6" cy="50.2" r="1.7" fill="#fff"/><circle cx="64.6" cy="50.2" r="1.7" fill="#fff"/><ellipse cx="29" cy="62" rx="5" ry="3" fill="#ff8fa3" opacity=".45"/><ellipse cx="71" cy="62" rx="5" ry="3" fill="#ff8fa3" opacity=".45"/><ellipse cx="50" cy="60" rx="2.6" ry="1.9" fill="#e58a9a"/><path d="M46.5 63 Q48.3 65.6 50 63.4 Q51.7 65.6 53.5 63" stroke="#0007" fill="none" stroke-width="1.3" stroke-linecap="round"/></svg>`}
 
 const cardHTML=c=>{const i=S.crew.indexOf(c.id);
 return`<div class="card r${c.rar}${i>=0&&!c.ret?' crew':''}${i===0&&!c.ret?' cap':''}${c.ret?' ret':''}" data-id="${c.id}">${catSVG(c)}<div class="nm">${c.n}</div><div class="rar" style="color:${RC[c.rar]}">${c.ret?'อนุสรณ์':RAR[c.rar]}</div><div class="tb">${TR[c.a].n}${c.b>=0?' + '+TR[c.b].n:''} · ระดับ ${ROM[c.lv]}</div><div class="paws">${Array.from({length:9},(_,k)=>`<i class="${k<c.lives?'':'x'}"></i>`).join('')}</div></div>`};
@@ -317,12 +317,11 @@ cx.strokeStyle=c1;cx.lineWidth=6;cx.lineCap='round';cx.beginPath();cx.moveTo(x-1
 cx.fillStyle=c1;cx.beginPath();stand?cx.ellipse(x,y-30,13,26,0,0,7):cx.ellipse(x,y-16,22,15,0,0,7);cx.fill();
 if(!mono){cx.fillStyle=sh(c1,-.14);cx.beginPath();stand?cx.ellipse(x+5,y-28,7,22,0,0,7):cx.ellipse(x-4,y-9,17,7,0,0,7);cx.fill()}
 const hx=stand?x:x+12,hy=stand?y-66:y-38;
-cx.fillStyle=c1;cx.beginPath();cx.moveTo(hx-12,hy-4);cx.lineTo(hx-10,hy-20);cx.lineTo(hx-2,hy-10);cx.fill();
-cx.fillStyle=c2;cx.beginPath();cx.moveTo(hx+12,hy-4);cx.lineTo(hx+10,hy-20);cx.lineTo(hx+2,hy-10);cx.fill();
+cx.fillStyle=pt||c1;cx.beginPath();cx.moveTo(hx-12,hy-4);cx.lineTo(hx-10,hy-20);cx.lineTo(hx-2,hy-10);cx.fill();
+cx.fillStyle=pt||c2;cx.beginPath();cx.moveTo(hx+12,hy-4);cx.lineTo(hx+10,hy-20);cx.lineTo(hx+2,hy-10);cx.fill();
 cx.fillStyle=c1;cx.beginPath();cx.arc(hx,hy,13,0,7);cx.fill();
 if(c2!==c1){cx.fillStyle=c2;cx.beginPath();cx.arc(hx,hy,13,-Math.PI/2,Math.PI/2);cx.fill()}
-if(pt){cx.fillStyle=pt;cx.globalAlpha=.75;cx.beginPath();cx.ellipse(hx+2,hy+4,6,5,0,0,7);cx.fill();cx.globalAlpha=1}
-if(!mono){cx.fillStyle='#111';cx.beginPath();cx.arc(hx-4,hy-2,1.8,0,7);cx.arc(hx+6,hy-2,1.8,0,7);cx.fill();cx.fillStyle='#e58a9a';cx.beginPath();cx.arc(hx+1,hy+3,1.5,0,7);cx.fill()}
+if(!mono){cx.fillStyle='#111';cx.beginPath();cx.arc(hx-4,hy-2,2,0,7);cx.arc(hx+6,hy-2,2,0,7);cx.fill();cx.fillStyle='#fff';cx.beginPath();cx.arc(hx-3.4,hy-2.7,.7,0,7);cx.arc(hx+6.6,hy-2.7,.7,0,7);cx.fill();cx.fillStyle='#ff8fa366';cx.beginPath();cx.ellipse(hx-8,hy+3,2.6,1.6,0,0,7);cx.ellipse(hx+10,hy+3,2.6,1.6,0,0,7);cx.fill();cx.fillStyle='#e58a9a';cx.beginPath();cx.ellipse(hx+1,hy+2.5,1.3,1,0,0,7);cx.fill()}
 if(stand){cx.strokeStyle=mono||'#d8d2c4';cx.lineWidth=3;cx.beginPath();cx.moveTo(x+10,y-40);cx.lineTo(x+34,y-62);cx.stroke()}}
 function drawCat(x,y,L,stand){const c=L?TR[L.a].c:'#e59a4a';cx.save();cx.translate(3,3);catShape(x,y,L,stand,sh(c==='#2a2a33'?'#55556a':c,-.45));cx.restore();catShape(x,y,L,stand)}
 
