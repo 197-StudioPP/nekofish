@@ -68,6 +68,7 @@ h2{font-size:22px;line-height:1.2;margin:0 0 10px}
 @keyframes pop{0%{transform:scale(.3) rotate(-10deg);opacity:0}100%{transform:none;opacity:1}}
 @media(prefers-reduced-motion:reduce){.pop,.knock{animation:none}}
 .hidden{display:none!important}
+button.wait{position:relative;overflow:hidden;opacity:1;background:#d9cbb2;box-shadow:0 3px 0 #b9a888}button.wait::before{content:"";position:absolute;inset:0;background:var(--amb);transform-origin:left;animation:fillb 2.2s linear forwards}button.wait span{position:relative;opacity:.55}@keyframes fillb{from{transform:scaleX(0)}to{transform:scaleX(1)}}@media(prefers-reduced-motion:reduce){button.wait::before{animation:none;transform:scaleX(.5)}}
 .foot{margin-top:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .foot button{font-size:14px;min-height:44px}
 </style></head><body>
@@ -169,7 +170,7 @@ do{x=-3+Math.random()*6}while(R.cs.some(c=>Math.abs(c.x-x)<(c.r+r)*1.4+.8)&&++k<
 const q=Math.random(),type=q<.07?'heart':q<.13?'time':q<.22?'coin':q<.36?'x2':'n',life=2.8-R.d*1.1;R.cs.push({x,r,life,max:life,type,need:type==='x2'?2:1})}
 const GR=['C','B','A','S','SS'],GC=['#9aa5ad','#5fb3c9','#5fd16a','#e8912e','#d6304e'],GM=[1,1.2,1.5,2,3];
 function fishSVG(col,big){return`<svg viewBox="0 0 120 70" width="${big?200:120}" height="${big?117:70}" aria-hidden="true"><ellipse cx="62" cy="38" rx="40" ry="20" fill="#0002"/><path d="M22 35 L4 18 L9 35 L4 52Z" fill="${col}"/><ellipse cx="58" cy="35" rx="40" ry="20" fill="${col}"/><path d="M50 16 L64 4 L72 17Z" fill="${col}"/><ellipse cx="66" cy="42" rx="26" ry="9" fill="#fff3"/><circle cx="84" cy="30" r="5" fill="#fff"/><circle cx="85" cy="30" r="2.6" fill="#111"/></svg>`}
-function showResult(h){sheet='result';mbox.innerHTML=h+'<button class="main" id="mClose" disabled>ตกต่อ</button>';modal.classList.add('on');setTimeout(()=>{const b=$('#mClose');if(b)b.disabled=false},900)}
+function showResult(h){sheet='result';mbox.innerHTML=h+'<button class="main wait" id="mClose" disabled><span>ตกต่อ</span></button>';modal.classList.add('on');setTimeout(()=>{const b=$('#mClose');if(b){b.disabled=false;b.classList.remove('wait')}},2200)}
 function statsLine(){const a=[];if(R.maxC>1)a.push('คอมโบสูงสุด x'+R.maxC);if(R.perf)a.push('เป๊ะ '+R.perf+' ครั้ง');if(R.rushBest)a.push('รัวได้ '+R.rushBest+' ครั้ง');if(R.bonus)a.push('โบนัสเหรียญ +'+R.bonus);return a.length?`<p class="hint">${a.join(' · ')}</p>`:''}
 function winReel(){S.reels=(S.reels||0)+1;let h;
 if(item.t==='amber'){T.amb++;T.log.push({n:'อำพันแมว',v:0,g:-1});h=`<h2>ได้อำพันแมว!</h2><svg viewBox="0 0 100 100" width="130" height="130" style="margin:0 auto" aria-hidden="true"><path d="M50 8 C76 10 92 36 89 60 C86 82 68 94 49 93 C27 92 10 76 12 54 C14 30 28 7 50 8Z" fill="#e8912e"/><ellipse cx="38" cy="30" rx="12" ry="7" fill="#fff6" transform="rotate(-30 38 30)"/></svg><p class="hint">เอากลับไปทุบที่ท่าเรือ ข้างในมีแมวรออยู่</p>`}
