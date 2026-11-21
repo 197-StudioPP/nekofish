@@ -76,7 +76,7 @@ button.wait{position:relative;overflow:hidden;opacity:1;background:#d9cbb2;box-s
 .game-version{position:fixed;right:max(10px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));z-index:2;pointer-events:none;padding:3px 8px;border-radius:12px;background:#142b38e6;color:#fff;font:12px/1.4 Sarabun,system-ui,sans-serif}
 body{overflow:hidden;overscroll-behavior:none}
 </style></head><body>
-<div class="game-version">Nekofish · เวอร์ชันทดลอง 12</div>
+<div class="game-version">Nekofish · เวอร์ชันทดลอง 13</div>
 <div class="fig" id="fig"><canvas id="cv"></canvas><div id="toast"></div></div>
 <div id="modal"><div class="mbox" id="mbox"></div></div>
 <script>
@@ -526,8 +526,9 @@ const tw=Math.sin(t*2.6+x)*6;cx.lineCap='round';cx.beginPath();cx.moveTo(x-16,y-
 const bod=()=>cx.ellipse(x,y-15,22,15,0,0,7);blob(bod,c1,0);shade(bod,()=>cx.ellipse(x-10,y-4,22,12,0,0,7),dk);
 cx.fillStyle=lt;cx.beginPath();cx.ellipse(x+10,y-12,8,7,0,0,7);cx.fill();
 blob(()=>cx.ellipse(x+6,y-2,5,3.6,0,0,7),c1,0);blob(()=>cx.ellipse(x+16,y-2,5,3.6,0,0,7),c1,0);
-const hx=x+11,hy=y-38+Math.sin(t*2.6+x)*1.4;
-for(const s2 of[-1,1]){blob(()=>{cx.moveTo(hx+s2*12,hy-3);cx.quadraticCurveTo(hx+s2*15,hy-24,hx+s2*9,hy-19);cx.lineTo(hx+s2*1,hy-10);cx.closePath()},pt||c1,0);cx.fillStyle='#f2a5b3';cx.beginPath();cx.moveTo(hx+s2*10,hy-6);cx.lineTo(hx+s2*9.5,hy-16);cx.lineTo(hx+s2*4,hy-10);cx.fill()}
+const hx=x+11,hy=y-34+Math.sin(t*2.6+x)*1.4;
+cx.save();cx.translate(hx,hy);cx.scale(.82,.82);cx.translate(-hx,-hy);
+for(const s2 of[-1,1]){blob(()=>{cx.moveTo(hx+s2*12,hy-3);cx.lineTo(hx+s2*12,hy-25);cx.quadraticCurveTo(hx+s2*12,hy-28,hx+s2*9,hy-24);cx.lineTo(hx+s2*2,hy-10);cx.closePath()},pt||c1,0);cx.fillStyle='#f2a5b3';cx.beginPath();cx.moveTo(hx+s2*10,hy-6);cx.lineTo(hx+s2*9.5,hy-21);cx.lineTo(hx+s2*4,hy-10);cx.fill()}
 blob(()=>cx.ellipse(hx,hy,16,13.5,0,0,7),c1,0);
 if(pt){cx.fillStyle=pt;cx.globalAlpha=.35;cx.beginPath();cx.ellipse(hx+1,hy+4,7,5,0,0,7);cx.fill();cx.globalAlpha=1}
 const blink=(t+x*.01)%4<.12;
@@ -536,6 +537,7 @@ for(const ex of [hx-5,hx+6])blob(()=>cx.ellipse(ex,hy-1,1.55,blink?.5:1.55,0,0,7
 cx.fillStyle='#ff8fa366';cx.beginPath();cx.ellipse(hx-8,hy+4,2.8,1.7,0,0,7);cx.ellipse(hx+9,hy+4,2.8,1.7,0,0,7);cx.fill();
 cx.fillStyle='#e58a9a';cx.beginPath();cx.ellipse(hx+.5,hy+3,1.5,1.1,0,0,7);cx.fill();
 cx.strokeStyle=OL;cx.lineWidth=1.1;cx.beginPath();cx.moveTo(hx-1.8,hy+5.3);cx.quadraticCurveTo(hx-.6,hy+6.8,hx+.5,hy+5.3);cx.quadraticCurveTo(hx+1.6,hy+6.8,hx+2.8,hy+5.3);cx.stroke();
+cx.restore();
 if(L)drawAcc(CH[L.a].acc,hx,hy,x,y)}
 let PA={swing:0,crouch:0},PETPOS=[],BUB=null,bubT=4;
 function say(c,txt,dur){BUB={id:c.id,txt,t:dur||3}}
@@ -557,15 +559,15 @@ function captainCastSprite(cat,frame){
  const {c:fur,p:points}=TR[type]||{c:'#e59a4a'};
  const shade=sh(fur,-.14),light=sh(fur,.38),dot=fur==='#2a2a33'?'#fff2de':'#3a2e38';
  const {head:[x,y],grip:[px,py],body,tail}=castCels[frame];
- const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="-48 -68 100 72" width="200" height="144">
+ const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="-48 -76 100 80" width="200" height="160">
  <ellipse cy="-1" rx="25" ry="3" fill="#203d45" opacity=".19"/>
  <path d="${tail}" fill="none" stroke="${shade}" stroke-width="8" stroke-linecap="round"/>
  <path d="${body}" fill="${fur}"/>
  <ellipse cx="-11" cy="-7" rx="9" ry="7" fill="${shade}"/>
  <ellipse cx="12" cy="-3.5" rx="7" ry="3.5" fill="${light}"/>
- <g transform="translate(${x} ${y})">
- <path d="M-17 -4 Q-24 -23 -16 -23 Q-11 -21 -4 -14 H6 Q13 -22 17 -20 Q21 -18 19 -3Z" fill="${points||fur}"/>
- <path d="M-16 -9 Q-20 -20 -15 -19 L-8 -12 M12 -11 L17 -17 Q19 -18 17 -8" fill="#f4abb1"/>
+ <g transform="translate(${x} ${y+3}) scale(.78)">
+ <path d="M-16 -5 L-17 -29 Q-17 -33 -14 -31 L-4 -14 H6 L16 -31 Q19 -33 19 -29 L19 -5Z" fill="${points||fur}"/>
+ <path d="M-14 -12 L-14 -25 L-7 -14 M11 -14 L16 -25 L16 -12" fill="#f4abb1"/>
  <path d="M-19 0 C-20 -10 -11 -16 1 -16 C14 -16 23 -9 23 1 C23 11 14 16 1 16 C-12 16 -20 11 -19 0Z" fill="${fur}"/>
  <ellipse cx="6" cy="7" rx="8" ry="5" fill="${points||light}" opacity=".7"/>
  <ellipse cx="-9" cy="6" rx="4.5" ry="2.6" fill="#ef909d" opacity=".55"/>
@@ -616,8 +618,8 @@ if(sprite?.naturalWidth){
  cx.save();
  cx.translate(catX,catY);
  cx.scale(kittenScale,kittenScale);
- cx.drawImage(sprite,-48,-68,100,72);
- if(captain)drawAcc(CH[captain.a].acc,...pose.head,0,0);
+ cx.drawImage(sprite,-48,-76,100,80);
+ if(captain)drawAcc(CH[captain.a].acc,pose.head[0],pose.head[1]+3,0,0);
  cx.restore();
 }else drawPet(catX,catY,captain,fight?.84:kittenScale);
 if(captain)PETPOS.push({x:catX,y:catY-54,id:captain.id});
