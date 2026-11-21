@@ -148,7 +148,7 @@ body[data-mode=idle] #questQuick{top:max(74px,calc(env(safe-area-inset-top) + 66
 @keyframes quest-slide{from{opacity:0;transform:translateX(10px)}}
 @media(prefers-reduced-motion:reduce){#questQuick{animation:none}}
 </style></head><body>
-<div class="game-version">Nekofish · เวอร์ชันทดลอง 43</div>
+<div class="game-version">Nekofish · เวอร์ชันทดลอง 44</div>
 <div class="fig" id="fig"><canvas id="cv"></canvas><div id="toast"></div></div>
 <span id="voyageCatch" hidden></span>
 <aside id="questQuick" aria-label="ภารกิจในหน้าเกม" hidden>
@@ -940,8 +940,8 @@ function drawSeaFromDeck(zone){
   cx.beginPath();cx.moveTo(x,y);cx.quadraticCurveTo(x+length*.55,y-2-depth*3,x+length,y);cx.stroke();
  }
 }
-function drawForegroundDeck(x,y){
- const half=cl(W*.235,90,225),edge=y-24;
+function drawForegroundDeck(x,y,zoom){
+ const half=cl(W*.235,90,225)*(1-.34*zoom),edge=y-24+7*zoom;
  const flare=half*.24,rim=cl(half*.045,4,9);
  cx.fillStyle='#926052';
  cx.beginPath();cx.moveTo(x-half-flare,H+14);cx.lineTo(x-half*.82,edge+20);
@@ -1001,6 +1001,7 @@ function drawDeckCat(x,y,cat,scale,pose={}){
  if(cat)drawAcc(CH[cat.a].acc,0,0,0,34);
  cx.restore();cx.restore();
 }
+let fishingZoom=0;
 function draw(){
 const reeling=mode==='reel',landing=mode==='land';
 const tug=reeling?linePull():{fish:0,counter:0};
@@ -1008,7 +1009,7 @@ const z=T?Math.min(T.zone,5):1,hz=H*.42;
 cx.save();if(shake>0)cx.translate((Math.random()-.5)*14*shake,(Math.random()-.5)*14*shake);
 if(T)drawSeaFromDeck(z);else drawBG(z,hz);
 const py=hz+(H-hz)*.2+Math.min(22,H*.035),bx=T?Math.max(78,W*.31):W*.5;
-const by=(T?H*.85:hz+(H-hz)*.62)+Math.sin(t*1.6)*2;
+const by=(T?H*(.85+.047*fishingZoom):hz+(H-hz)*.62)+Math.sin(t*1.6)*2;
 const fishingX=W*.69,fishingY=H*.39;
 SP=[];
 if(!T)drawPort(bx,by,py);
@@ -1018,12 +1019,12 @@ else if(mode==='idle'){
  lbl('ไปต่อ ›',W-49,51);hitR(W-94,23,88,44,'far');
 }
 const fight=mode==='fight';
-if(T)drawForegroundDeck(bx,by);else drawBoatBack(bx,by);
+if(T)drawForegroundDeck(bx,by,fishingZoom);else drawBoatBack(bx,by);
 const [captain,...mates]=crewCards();
 PETPOS=[];
 mates.forEach((cat,i)=>{
- const x=bx+(i===0?-53:52),y=by-6+(T?10:0);
- if(T)drawDeckCat(x,y,cat,.86,{lean:Math.sin(t*1.7+i)*.07});else drawPet(x,y,cat,.67);
+ const x=bx+(i===0?-53:52)*(T?1-.29*fishingZoom:1),y=by-6+(T?10:0);
+ if(T)drawDeckCat(x,y,cat,.86-.12*fishingZoom,{lean:Math.sin(t*1.7+i)*.07});else drawPet(x,y,cat,.67);
  PETPOS.push({x,y:y-43,id:cat.id});
 });
 const catX=bx+8+(fight?PA.swing*11:0),catY=by-6+(fight?PA.crouch*7:0);
@@ -1035,13 +1036,14 @@ if(mode==='port'||mode==='idle'){
 }
 const rodAngle=pose.angle+(mode==='bite'?Math.sin(t*27)*.09:0)+(reeling?tug.fish*.22-tug.counter*.49:landing?-ease(cl(LAND.t/.35,0,1))*.42:0);
 const gripX=catX+pose.grip[0]*kittenScale+tug.fish*4-tug.counter*7,gripY=catY+pose.grip[1]*kittenScale-tug.counter*5;
-const tipx=gripX+Math.cos(rodAngle)*67,tipy=gripY+Math.sin(rodAngle)*67;
+const rodLength=T?67-9*fishingZoom:67;
+const tipx=gripX+Math.cos(rodAngle)*rodLength,tipy=gripY+Math.sin(rodAngle)*rodLength;
 const sprite=T||fight?null:captainCastSprite(captain,frame);
 if(T){
  const lean=frame===1?-6:frame===2?6:frame===3?9:0;
  const celebrate=landing?Math.sin(Math.PI*cl((LAND.t-.72)/.44,0,1))*7:0;
  const bodyLean=(frame===1?-.27:frame===2||frame===3?.22:0)+tug.fish*.25-tug.counter*.41;
- drawDeckCat(catX+lean*.42,catY,captain,1,{
+ drawDeckCat(catX+lean*.42,catY,captain,1-.11*fishingZoom,{
   lift:reeling?tug.counter*3:celebrate,lean:bodyLean,pull:tug.counter,
   grip:fight?null:{x:gripX,y:gripY}
  });
@@ -1297,6 +1299,8 @@ function loop(now){try{const dt=Math.min(.05,(now-last)/1000);last=now;t+=dt;sha
 if(mode==='wait'){cast=Math.min(1,cast+dt*2.5);waitT-=dt;if(waitT<=0){item=roll();biteT=trainingStage()===2?3.4:2.4;setMode('bite')}}
 else if(mode==='bite'){biteT-=dt;if(biteT<=0){toast('ช้าไป ปลาหลุดเบ็ด');setMode('idle')}}
 else if(mode==='reel'){if(!modal.classList.contains('on'))upReel(dt)}else if(mode==='land'){LAND.t=Math.min(catchLiftTime,LAND.t+dt)}else if(mode==='fight')upFight(dt);
+const fishing=T&&['wait','bite','reel','land'].includes(mode);
+fishingZoom=T?fishingZoom+((fishing?1:0)-fishingZoom)*Math.min(1,dt*10):0;
 if(W)draw();
 if(mode==='land'&&LAND.t>=catchLiftTime){setMode('idle');showResult('<p class="hint">จับสำเร็จ</p>'+LAND.h)}
 }catch(err){console.error(err)}requestAnimationFrame(loop)}
