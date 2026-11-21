@@ -148,7 +148,7 @@ body[data-mode=idle] #questQuick{top:max(74px,calc(env(safe-area-inset-top) + 66
 @keyframes quest-slide{from{opacity:0;transform:translateX(10px)}}
 @media(prefers-reduced-motion:reduce){#questQuick{animation:none}}
 </style></head><body>
-<div class="game-version">Nekofish · เวอร์ชันทดลอง 41</div>
+<div class="game-version">Nekofish · เวอร์ชันทดลอง 42</div>
 <div class="fig" id="fig"><canvas id="cv"></canvas><div id="toast"></div></div>
 <span id="voyageCatch" hidden></span>
 <aside id="questQuick" aria-label="ภารกิจในหน้าเกม" hidden>
@@ -959,20 +959,46 @@ function drawForegroundDeck(x,y){
  cx.moveTo(x-half*.74,edge+25);cx.quadraticCurveTo(x-24,edge-18,x+half*.78,edge+9);cx.stroke();
  cx.strokeStyle='#f0c69a';cx.lineWidth=6;cx.stroke();
 }
-function drawDeckCat(x,y,cat,scale,lift=0){
+function drawDeckCat(x,y,cat,scale,pose={}){
+ const {lift=0,lean=0,pull=0,grip}=pose;
  const fur=cat?TR[cat.a].c:'#e59a4a',points=cat&&TR[cat.a].p;
- cx.save();cx.translate(x,y-lift);cx.scale(scale,scale);
- blob(()=>cx.ellipse(0,0,23,5,0,0,7),'#664b383c',0);
- cx.strokeStyle=sh(fur,-.16);cx.lineWidth=7;cx.lineCap='round';cx.beginPath();
- cx.moveTo(-12,-10);cx.quadraticCurveTo(-36,-6,-31+Math.sin(t*3)*3,-29);cx.stroke();
- blob(()=>cx.ellipse(0,-13,18,14,0,0,7),sh(fur,-.07),0);
- const headY=-34+Math.sin(t*2.7)*.9;
- for(const side of [-1,1]){
-  blob(()=>{cx.moveTo(side*12,headY);cx.lineTo(side*12,headY-23);cx.quadraticCurveTo(side*11,headY-25,side*8,headY-21);cx.lineTo(side*2,headY-9);cx.closePath()},points||fur,0);
+ const shadow=sh(fur,-.17),light=sh(fur,.22);
+ cx.save();cx.translate(x,y);cx.scale(scale,scale);
+ blob(()=>cx.ellipse(0,1,22-lift*.4,4,0,0,7),'#664b3844',0);
+ cx.translate(0,-lift);
+
+ // The tail follows the body with a softer, slower movement.
+ const tail=Math.sin(t*3-pull)*4+lean*12;
+ cx.strokeStyle=shadow;cx.lineWidth=7;cx.lineCap='round';cx.beginPath();
+ cx.moveTo(-12,-10);cx.bezierCurveTo(-22,-7,-37,-10,-31+tail,-27-pull*5);cx.stroke();
+ blob(()=>cx.ellipse(-10,-2,7,4,-.18,0,7),shadow,0);
+ blob(()=>cx.ellipse(10,-2,7,4,.18,0,7),shadow,0);
+
+ const shoulderX=lean*15,shoulderY=-17+pull*3;
+ const coat=cx.createLinearGradient(-13,-12,13,-26);
+ coat.addColorStop(0,shadow);coat.addColorStop(1,fur);
+ blob(()=>cx.ellipse(shoulderX,-13,17,14+pull*2,lean,0,7),coat,0);
+ if(grip){
+  const px=(grip.x-x)/scale,py=(grip.y-y)/scale+lift;
+  cx.strokeStyle=light;cx.lineWidth=7;cx.beginPath();
+  cx.moveTo(shoulderX+9,shoulderY);cx.quadraticCurveTo(px-7,py+6,px,py);cx.stroke();
  }
- blob(()=>cx.ellipse(0,headY,14,11,0,0,7),fur,0);
- if(cat)drawAcc(CH[cat.a].acc,0,headY,0,0);
- cx.restore();
+
+ const headY=-34+Math.sin(t*2.7)*.8+pull*3;
+ cx.save();cx.translate(shoulderX,headY);cx.rotate(lean*.65);
+ for(const side of [-1,1]){
+  const earFlick=Math.sin(t*3.8+side)*1.3+pull*2;
+  blob(()=>{
+   cx.moveTo(side*12,0);cx.lineTo(side*(12+earFlick),-22+pull);
+   cx.quadraticCurveTo(side*(11+earFlick),-24+pull,side*8,-20+pull);
+   cx.lineTo(side*2,-9);cx.closePath();
+  },points||fur,0);
+  blob(()=>{cx.moveTo(side*10,-9);cx.lineTo(side*(11+earFlick),-18+pull);cx.lineTo(side*6,-10);cx.closePath()},light,0);
+ }
+ blob(()=>cx.ellipse(0,0,14,11,0,0,7),fur,0);
+ blob(()=>cx.ellipse(-4,-5,6,2.8,-.2,0,7),light,0);
+ if(cat)drawAcc(CH[cat.a].acc,0,0,0,34);
+ cx.restore();cx.restore();
 }
 function draw(){
 const reeling=mode==='reel',landing=mode==='land';
@@ -996,7 +1022,7 @@ const [captain,...mates]=crewCards();
 PETPOS=[];
 mates.forEach((cat,i)=>{
  const x=bx+(i===0?-53:52),y=by-6+(T?10:0);
- if(T)drawDeckCat(x,y,cat,.86);else drawPet(x,y,cat,.67);
+ if(T)drawDeckCat(x,y,cat,.86,{lean:Math.sin(t*1.7+i)*.07});else drawPet(x,y,cat,.67);
  PETPOS.push({x,y:y-43,id:cat.id});
 });
 const catX=bx+8+(fight?PA.swing*11:0),catY=by-6+(fight?PA.crouch*7:0);
@@ -1006,11 +1032,18 @@ const pose=castCels[frame],kittenScale=.74;
 if(mode==='port'||mode==='idle'){
  for(let i=1;i<castCels.length;i++)captainCastSprite(captain,i);
 }
+const rodAngle=pose.angle+(mode==='bite'?Math.sin(t*27)*.09:0)+(reeling?tug.fish*.22-tug.counter*.49:landing?-ease(cl(LAND.t/.35,0,1))*.42:0);
+const gripX=catX+pose.grip[0]*kittenScale+tug.fish*4-tug.counter*7,gripY=catY+pose.grip[1]*kittenScale-tug.counter*5;
+const tipx=gripX+Math.cos(rodAngle)*67,tipy=gripY+Math.sin(rodAngle)*67;
 const sprite=T||fight?null:captainCastSprite(captain,frame);
 if(T){
  const lean=frame===1?-6:frame===2?6:frame===3?9:0;
  const celebrate=landing?Math.sin(Math.PI*cl((LAND.t-.72)/.44,0,1))*7:0;
- drawDeckCat(catX+lean+(tug.fish*4-tug.counter*7),catY,captain,1,reeling?tug.counter*5:celebrate);
+ const bodyLean=(frame===1?-.27:frame===2||frame===3?.22:0)+tug.fish*.25-tug.counter*.41;
+ drawDeckCat(catX+lean*.42,catY,captain,1,{
+  lift:reeling?tug.counter*3:celebrate,lean:bodyLean,pull:tug.counter,
+  grip:fight?null:{x:gripX,y:gripY}
+ });
 }else if(sprite?.naturalWidth){
  cx.save();
  cx.translate(catX,catY);
@@ -1020,9 +1053,6 @@ if(T){
  cx.restore();
 }else drawPet(catX,catY,captain,fight?.84:kittenScale);
 if(captain)PETPOS.push({x:catX,y:catY-54,id:captain.id});
-const rodAngle=pose.angle+(mode==='bite'?Math.sin(t*27)*.09:0)+(reeling?tug.fish*.22-tug.counter*.49:landing?-ease(cl(LAND.t/.35,0,1))*.42:0);
-const gripX=catX+pose.grip[0]*kittenScale+tug.fish*4-tug.counter*7,gripY=catY+pose.grip[1]*kittenScale-tug.counter*5;
-const tipx=gripX+Math.cos(rodAngle)*67,tipy=gripY+Math.sin(rodAngle)*67;
 if(!fight){
  drawCatRod(gripX,gripY,tipx,tipy,mode==='bite'?12:reeling?8+tug.fish*16+tug.counter*9:4);
  blob(()=>cx.ellipse(gripX,gripY,3.8,3,-.3,0,7),captain?TR[captain.a].c:'#e59a4a',0);
