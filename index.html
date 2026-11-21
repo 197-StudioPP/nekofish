@@ -148,7 +148,7 @@ body[data-mode=idle] #questQuick{top:max(74px,calc(env(safe-area-inset-top) + 66
 @keyframes quest-slide{from{opacity:0;transform:translateX(10px)}}
 @media(prefers-reduced-motion:reduce){#questQuick{animation:none}}
 </style></head><body>
-<div class="game-version">Nekofish · เวอร์ชันทดลอง 42</div>
+<div class="game-version">Nekofish · เวอร์ชันทดลอง 43</div>
 <div class="fig" id="fig"><canvas id="cv"></canvas><div id="toast"></div></div>
 <span id="voyageCatch" hidden></span>
 <aside id="questQuick" aria-label="ภารกิจในหน้าเกม" hidden>
@@ -941,11 +941,12 @@ function drawSeaFromDeck(zone){
  }
 }
 function drawForegroundDeck(x,y){
- const half=Math.min(W*.54,355),edge=y-30;
+ const half=cl(W*.235,90,225),edge=y-24;
+ const flare=half*.24,rim=cl(half*.045,4,9);
  cx.fillStyle='#926052';
- cx.beginPath();cx.moveTo(x-half-50,H+18);cx.lineTo(x-half*.74,edge+25);
- cx.quadraticCurveTo(x-24,edge-18,x+half*.78,edge+9);
- cx.lineTo(x+half+65,H+18);cx.closePath();cx.fill();
+ cx.beginPath();cx.moveTo(x-half-flare,H+14);cx.lineTo(x-half*.82,edge+20);
+ cx.quadraticCurveTo(x-half*.13,edge-14,x+half*.83,edge+9);
+ cx.lineTo(x+half+flare,H+14);cx.closePath();cx.fill();
  cx.save();cx.clip();
  const wood=cx.createLinearGradient(0,edge,0,H);
  wood.addColorStop(0,'#d7a171');wood.addColorStop(1,'#ab7559');
@@ -955,9 +956,9 @@ function drawForegroundDeck(x,y){
   cx.beginPath();cx.moveTo(x+i*half*.19,edge);cx.lineTo(x+i*half*.28,H+15);cx.stroke();
  }
  cx.restore();
- cx.strokeStyle='#8c5a4b';cx.lineWidth=12;cx.lineCap='round';cx.beginPath();
- cx.moveTo(x-half*.74,edge+25);cx.quadraticCurveTo(x-24,edge-18,x+half*.78,edge+9);cx.stroke();
- cx.strokeStyle='#f0c69a';cx.lineWidth=6;cx.stroke();
+ cx.strokeStyle='#8c5a4b';cx.lineWidth=rim;cx.lineCap='round';cx.beginPath();
+ cx.moveTo(x-half*.82,edge+20);cx.quadraticCurveTo(x-half*.13,edge-14,x+half*.83,edge+9);cx.stroke();
+ cx.strokeStyle='#f0c69a';cx.lineWidth=rim*.52;cx.stroke();
 }
 function drawDeckCat(x,y,cat,scale,pose={}){
  const {lift=0,lean=0,pull=0,grip}=pose;
@@ -1007,7 +1008,7 @@ const z=T?Math.min(T.zone,5):1,hz=H*.42;
 cx.save();if(shake>0)cx.translate((Math.random()-.5)*14*shake,(Math.random()-.5)*14*shake);
 if(T)drawSeaFromDeck(z);else drawBG(z,hz);
 const py=hz+(H-hz)*.2+Math.min(22,H*.035),bx=T?Math.max(78,W*.31):W*.5;
-const by=(T?H*.81:hz+(H-hz)*.62)+Math.sin(t*1.6)*2;
+const by=(T?H*.85:hz+(H-hz)*.62)+Math.sin(t*1.6)*2;
 const fishingX=W*.69,fishingY=H*.39;
 SP=[];
 if(!T)drawPort(bx,by,py);
