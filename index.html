@@ -145,7 +145,7 @@ body[data-mode=idle] #questQuick{top:max(74px,calc(env(safe-area-inset-top) + 66
 @keyframes quest-slide{from{opacity:0;transform:translateX(10px)}}
 @media(prefers-reduced-motion:reduce){#questQuick{animation:none}}
 </style></head><body>
-<div class="game-version">Nekofish · เวอร์ชันทดลอง 38</div>
+<div class="game-version">Nekofish · เวอร์ชันทดลอง 39</div>
 <div class="fig" id="fig"><canvas id="cv"></canvas><div id="toast"></div></div>
 <span id="voyageCatch" hidden></span>
 <aside id="questQuick" aria-label="ภารกิจในหน้าเกม" hidden>
@@ -527,7 +527,7 @@ function fishSVG(col,big){
  <ellipse cx="13" cy="3" rx="3" ry="1.4" fill="#efa8ad"/>
  </svg>`
 }
-const catchRevealTime=1.14,catchLiftTime=.86;
+const catchLiftTime=1.02,catchBreakSurface=.16;
 function showResult(content){
  sheet='result';
  mbox.innerHTML=content+'<button type="button" class="main" id="mClose">ตกต่อ</button>';
@@ -996,7 +996,7 @@ if(mode==='port'||mode==='idle'){
 const sprite=T||fight?null:captainCastSprite(captain,frame);
 if(T){
  const lean=frame===1?-6:frame===2?6:frame===3?9:0;
- const celebrate=landing&&LAND.t>catchLiftTime?Math.sin(Math.PI*cl((LAND.t-catchLiftTime)/(catchRevealTime-catchLiftTime),0,1))*8:0;
+ const celebrate=landing?Math.sin(Math.PI*cl((LAND.t-.72)/.44,0,1))*7:0;
  drawDeckCat(catX+lean,catY,captain,1,reeling?Math.max(0,R.paw*12):celebrate);
 }else if(sprite?.naturalWidth){
  cx.save();
@@ -1007,7 +1007,7 @@ if(T){
  cx.restore();
 }else drawPet(catX,catY,captain,fight?.84:kittenScale);
 if(captain)PETPOS.push({x:catX,y:catY-54,id:captain.id});
-const rodAngle=pose.angle+(mode==='bite'?Math.sin(t*27)*.09:0)-(reeling?Math.max(0,R.paw)*1.3:landing?.25:0);
+const rodAngle=pose.angle+(mode==='bite'?Math.sin(t*27)*.09:0)-(reeling?Math.max(0,R.paw)*1.3:landing?ease(cl(LAND.t/.35,0,1))*.42:0);
 const gripX=catX+pose.grip[0]*kittenScale,gripY=catY+pose.grip[1]*kittenScale;
 const tipx=gripX+Math.cos(rodAngle)*67,tipy=gripY+Math.sin(rodAngle)*67;
 if(!fight){
@@ -1036,6 +1036,7 @@ if(mode==='idle'&&Math.sin(t*1.7)>.97){cx.fillStyle='#fff';cx.beginPath();cx.arc
 if(T&&mode==='idle'&&trainingStage()>=1&&(trainingStage()<5||trainingStage()===5&&!T.fish.length))trainingMarker(fishingX,fishingY,'เหวี่ยงเบ็ด');
 if(T&&!fight){
 let fx=fishingX,fy=fishingY+Math.sin(t*2)*2;
+let catchScale=1,catchTilt=0,catchOpacity=1;
 if(mode==='idle'){fx=tipx+6;fy=by+4}
 else if(mode==='wait'){const flight=cl((progress-.34)/.66,0,1);fx=tipx+(fx-tipx)*flight;fy=tipy+(fy-tipy)*flight-Math.sin(flight*Math.PI)*53}
 else if(mode==='bite')fy+=7+Math.sin(t*34)*3;
@@ -1056,35 +1057,49 @@ else if(reeling||landing){
  if(reeling&&R.rush<=0)drawReelTargets(toX,toY);
  if(reeling&&R.rush>0){fx+=Math.sin(t*31)*6;fy+=Math.sin(t*26)*3}
  if(landing){
-  const age=LAND.t;
-  if(age<.46){
-   const p=age/.46;
+  const age=LAND.t,fish=item.t==='fish';
+  const splashAge=age-catchBreakSurface;
+  if(splashAge>=0&&splashAge<.44){
+   const p=splashAge/.44;
    cx.save();cx.globalAlpha=1-p;cx.strokeStyle='#d5fff0';cx.lineWidth=2;
-   cx.beginPath();cx.ellipse(fx,fy,7+p*35,3+p*12,0,0,7);cx.stroke();
+   cx.beginPath();cx.ellipse(fx,fy,6+p*33,3+p*11,0,0,7);cx.stroke();
    for(let i=0;i<7;i++){
     const angle=(i+1)*Math.PI/8;
     cx.fillStyle='#d5fff0';cx.beginPath();cx.arc(fx+Math.cos(angle)*p*43,fy-Math.sin(angle)*p*48+p*p*30,2.5,0,7);cx.fill();
    }
    cx.restore();
   }
-  const lift=ease(cl(age/catchLiftTime,0,1));
-  fx+=(gripX+24-fx)*lift;
-  fy+=(gripY-21-fy)*lift-Math.sin(lift*Math.PI)*Math.min(100,H*.18);
+  if(age<catchBreakSurface){
+   const rise=ease(age/catchBreakSurface);
+   fy+=(fish?9:5)*(1-rise);
+   catchScale=fish?.58:.85;
+   catchOpacity=.52+rise*.40;
+  }else{
+   const lift=ease(cl((age-catchBreakSurface)/(catchLiftTime-catchBreakSurface),0,1));
+   fx+=(gripX+24-fx)*lift;
+   fy+=(gripY-22-fy)*lift-Math.sin(lift*Math.PI)*Math.min(104,H*.2);
+   catchScale=(fish?.58:.85)+lift*.5;
+   catchTilt=-Math.sin(lift*Math.PI)*.44;
+  }
  }
 }
+const face=R?.dir<0?-1:1;
+const mouth=landing&&item.t==='fish'?18*catchScale*face:0;
+const lineX=fx+Math.cos(catchTilt)*mouth,lineY=fy+Math.sin(catchTilt)*mouth;
 cx.strokeStyle='#ffffffbd';cx.lineWidth=1.3;cx.beginPath();cx.moveTo(tipx,tipy);
-cx.quadraticCurveTo((tipx+fx)/2,(tipy+fy)/2+(reeling||landing?6:28),fx,fy);cx.stroke();
+cx.quadraticCurveTo((tipx+lineX)/2,(tipy+lineY)/2+(reeling||landing?6:28),lineX,lineY);cx.stroke();
 if(reeling){
- const hop=R.jump>0?Math.sin(Math.PI*cl(R.jump/.6,0,1))*20:0;
+ const submergedY=fy+9+Math.sin(t*6)*1.6;
+ cx.save();cx.translate(fx,submergedY);cx.scale(face*.58,.58);
+ cx.globalAlpha=.52;
+ drawCaughtFish(item.t==='fish'?sh(fishArtColor(item),-.29):'#789b9e',Math.sin(t*17)*3,0);
+ cx.restore();
  cx.save();
- cx.lineCap='round';cx.strokeStyle=onC()?'#ffdc8880':'#b5f4df6b';cx.lineWidth=3;
- cx.beginPath();cx.moveTo(fx-R.dir*21,fy+3);cx.quadraticCurveTo(fx-R.dir*10,fy+5,fx,fy);cx.stroke();
+ cx.lineCap='round';cx.strokeStyle=onC()?'#ffdc8880':'#b5f4df6b';cx.lineWidth=2.4;
+ cx.beginPath();cx.moveTo(fx-face*21,fy+3);cx.quadraticCurveTo(fx-face*10,fy+5,fx,fy);cx.stroke();
  cx.fillStyle=onC()?'#ffe39a':'#cdf9e8';
  cx.shadowColor=cx.fillStyle;cx.shadowBlur=7;
  cx.beginPath();cx.arc(fx,fy,3.3,0,7);cx.fill();cx.restore();
- cx.save();cx.translate(fx,fy-hop);cx.scale(R.dir<0?-.58:.58,.58);
- drawCaughtFish(item.t==='fish'?fishArtColor(item):'#b1c6c4',Math.sin(t*17)*3,0);
- cx.restore();
  if(R.fx>0){
   const p=1-cl(R.fx/.25,0,1);
   cx.save();cx.globalAlpha=(1-p)*.8;cx.lineWidth=2.5;
@@ -1096,13 +1111,13 @@ if(reeling){
  if((trainingStage()===3||trainingStage()===4)&&onC()&&R.rush<=0)trainingMarker(fx,fy-9,'แตะตอนนี้');
 }
 if(landing){
- cx.save();cx.translate(fx,fy);cx.scale(1.3,1.3);
+ cx.save();cx.translate(fx,fy);cx.rotate(catchTilt);cx.scale(item.t==='fish'?face*catchScale:catchScale,catchScale);cx.globalAlpha=catchOpacity;
  if(item.t==='fish')drawCaughtFish(fishArtColor(item),Math.sin(LAND.t*23)*4,0);
  else if(item.t==='amber'){cx.fillStyle='#ffc47b';cx.beginPath();cx.ellipse(0,0,9,12,.2,0,7);cx.fill()}
  else if(item.t==='chest'){cx.fillStyle='#b97950';rr(-13,-8,26,16,4);cx.fillStyle='#ffce77';rr(-2,-3,4,6,1)}
  else drawCaughtFish('#a6b6af',0,0);
  cx.restore();
- if(LAND.t>=catchLiftTime)banner('จับได้แล้ว!',false);
+
 }
 if(!landing&&mode!=='idle'&&!reeling&&(mode!=='wait'||cast>=1)){cx.strokeStyle='#ffffff';cx.lineWidth=1.2;for(let i=0;i<2;i++){const p=(t*(mode==='bite'?1.8:.6)+i/2)%1;cx.globalAlpha=(1-p)*.5;cx.beginPath();cx.ellipse(fx,fy+4,6+p*26,2+p*7,0,0,7);cx.stroke()}cx.globalAlpha=1}
 if(!reeling&&!landing){cx.strokeStyle='#222';cx.lineWidth=1.5;cx.beginPath();cx.moveTo(fx,fy-6);cx.lineTo(fx,fy-12);cx.stroke();
@@ -1226,8 +1241,10 @@ let last=performance.now();
 function loop(now){try{const dt=Math.min(.05,(now-last)/1000);last=now;t+=dt;shake=Math.max(0,shake-dt);if(BUB)BUB.t-=dt;bubT-=dt;if(bubT<=0&&(mode==='port'||mode==='idle'||mode==='wait')&&PETPOS.length){const p=pick(PETPOS),c=S.cards.find(x=>x.id===p.id);if(c)say(c,c.hungry?pick(['หิวแล้ว…','ขอปลาหน่อย','ท้องร้องแล้วเนี่ย']):pick(CH[c.a].lines));bubT=7+Math.random()*7}flash=Math.max(0,flash-dt);
 if(mode==='wait'){cast=Math.min(1,cast+dt*2.5);waitT-=dt;if(waitT<=0){item=roll();biteT=trainingStage()===2?3.4:2.4;setMode('bite')}}
 else if(mode==='bite'){biteT-=dt;if(biteT<=0){toast('ช้าไป ปลาหลุดเบ็ด');setMode('idle')}}
-else if(mode==='reel'){if(!modal.classList.contains('on'))upReel(dt)}else if(mode==='land'){LAND.t+=dt;if(LAND.t>=catchRevealTime){setMode('idle');showResult('<p class="hint">จับสำเร็จ</p>'+LAND.h)}}else if(mode==='fight')upFight(dt);
-if(W)draw();}catch(err){console.error(err)}requestAnimationFrame(loop)}
+else if(mode==='reel'){if(!modal.classList.contains('on'))upReel(dt)}else if(mode==='land'){LAND.t=Math.min(catchLiftTime,LAND.t+dt)}else if(mode==='fight')upFight(dt);
+if(W)draw();
+if(mode==='land'&&LAND.t>=catchLiftTime){setMode('idle');showResult('<p class="hint">จับสำเร็จ</p>'+LAND.h)}
+}catch(err){console.error(err)}requestAnimationFrame(loop)}
 
 fig.addEventListener('pointerdown',e=>{e.preventDefault();const b=fig.getBoundingClientRect(),x=e.clientX-b.left,y=e.clientY-b.top;
 if(mode==='land'||modal.classList.contains('on'))return;if(mode==='reel'){if(e.isPrimary)strike();return}if(mode==='wait'||mode==='bite'){hook();return}
