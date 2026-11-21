@@ -79,6 +79,13 @@ body{overflow:hidden;overscroll-behavior:none}
 .mbox:has(#characterForm){overflow:visible;max-height:none;padding:10px;gap:6px}
 #characterForm{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 #characterForm label{display:grid;gap:2px;font-size:13px;text-align:left}
+.character-picker{grid-column:1/-1;display:flex;gap:4px;margin:0;padding:0;border:0}
+.character-picker legend{font-size:13px;text-align:left}
+#characterForm .character-picker label{position:relative;display:flex;flex:1;text-align:center}
+.character-picker input{position:absolute;opacity:0}
+.character-picker span{display:grid;place-items:center;flex:1;min-height:44px;padding:3px;background:var(--card);border:1px solid var(--line);border-radius:10px}
+.character-picker input:checked+span{background:#ffe4a8;border-color:#bd771f;color:#42311b}
+.character-picker input:focus-visible+span{outline:2px solid #3a7780}
 #characterForm select{height:38px;width:100%;font:inherit}
 #characterPreview{display:block;width:min(100%,240px,34dvh);height:auto;margin:auto;border:1px solid var(--line);border-radius:16px;background:linear-gradient(#fff0d8 45%,#b8e6de 46%,#79c6c5)}
 .character-colors,.character-actions{grid-column:1/-1;display:flex;justify-content:space-between;gap:4px}
@@ -91,7 +98,7 @@ body{overflow:hidden;overscroll-behavior:none}
 }
 </style></head><body>
 <button id="createCharacter" type="button">เลือกตัวละคร</button>
-<div class="game-version">Nekofish · เวอร์ชันทดลอง 5</div>
+<div class="game-version">Nekofish · เวอร์ชันทดลอง 6</div>
 <div class="fig" id="fig"><canvas id="cv"></canvas><div id="toast"></div></div>
 <div id="modal"><div class="mbox" id="mbox"></div></div>
 <script>
@@ -212,7 +219,9 @@ function renderSheet(){
 if(sheet==='character'){
  const colors=character();
  mbox.innerHTML=`<h2>เลือกตัวละคร</h2><canvas id="characterPreview" width="560" height="280" role="img" aria-label="ตัวอย่างตัวละครที่เลือก"></canvas><form id="characterForm">
- <label>ตัวละครที่จะเล่น <select name="id">${Object.entries(characters).map(([id,preset])=>`<option value="${id}" ${id===colors.id?'selected':''}>${preset.name}</option>`).join('')}</select></label>
+ <fieldset class="character-picker"><legend>ตัวละครที่จะเล่น</legend>
+ ${Object.entries(characters).map(([id,preset])=>`<label><input type="radio" name="playerChoice" value="${id}" ${id===colors.id?'checked':''}><span>${preset.name}</span></label>`).join('')}
+ </fieldset>
  <label>ชุดสำเร็จรูป <select name="outfit"><option value="">เลือกชุด</option><option value="captain">กันฝนสีเหลือง</option><option value="pearl">ชุดสีม่วง</option><option value="wave">ชุดสีฟ้า</option></select></label>
  <div class="character-colors">${Object.entries(characterFields).map(([key,label])=>`<label>${label}<input type="color" name="${key}" value="${colors[key]}"></label>`).join('')}</div>
  <div class="character-actions"><button class="main" type="button" id="mClose">เสร็จแล้ว</button></div>
@@ -816,7 +825,8 @@ function drawCharacterPreview(form){
  const canvas=$('#characterPreview'),context=canvas.getContext('2d');
  if(!context)return;
  const colors=Object.fromEntries(new FormData(form));
- const outfit={...characters[characterId(colors.id)],...colors};
+ const id=characterId(colors.playerChoice);
+ const outfit={...characters[id],...colors,id};
  const gameContext=cx;
  cx=context;
  cx.save();
@@ -830,15 +840,15 @@ function drawCharacterPreview(form){
  }
 }
 mbox.addEventListener('input',e=>{
- if(e.target.form?.id==='characterForm'&&e.target.type==='color')drawCharacterPreview(e.target.form);
+ if(e.target.form?.matches('#characterForm')&&e.target.type==='color')drawCharacterPreview(e.target.form);
 });
 function applyCharacterColors(form,preset,keys){
  for(const key of keys)form.elements.namedItem(key).value=preset[key];
 }
 mbox.addEventListener('change',e=>{
  const form=e.target.form;
- if(form?.id!=='characterForm')return;
- if(e.target.name==='id'){
+ if(!form?.matches('#characterForm'))return;
+ if(e.target.name==='playerChoice'){
   applyCharacterColors(form,characters[characterId(e.target.value)],Object.keys(characterFields));
   form.elements.outfit.value='';
  }
@@ -848,13 +858,13 @@ mbox.addEventListener('change',e=>{
  saveCharacterSelection(form);
 });
 mbox.addEventListener('submit',e=>{
- if(e.target.id!=='characterForm'||sheet!=='character')return;
+ if(!e.target.matches('#characterForm')||sheet!=='character')return;
  e.preventDefault();
  closeSheet();
 });
 function saveCharacterSelection(form){
- const {outfit,...selection}=Object.fromEntries(new FormData(form));
- S.character=selection;
+ const {outfit,playerChoice,...colors}=Object.fromEntries(new FormData(form));
+ S.character={...colors,id:characterId(playerChoice)};
  save();
  drawCharacterPreview(form);
 }
