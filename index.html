@@ -98,7 +98,7 @@ body{overflow:hidden;overscroll-behavior:none}
 }
 </style></head><body>
 <button id="createCharacter" type="button">เลือกตัวละคร</button>
-<div class="game-version">Nekofish · เวอร์ชันทดลอง 7</div>
+<div class="game-version">Nekofish · เวอร์ชันทดลอง 8</div>
 <div class="fig" id="fig"><canvas id="cv"></canvas><div id="toast"></div></div>
 <div id="modal"><div class="mbox" id="mbox"></div></div>
 <script>
@@ -411,7 +411,7 @@ cx.strokeStyle='#c9cfd4';cx.lineWidth=4;cx.beginPath();cx.moveTo(-20,H*.86);cx.l
 cx.lineWidth=3;const railY=x=>{const f=x/W;if(f<.18)return H*.86+(dy-28-H*.86)*((x+20)/(W*.18+20));if(f>.82)return dy-28+(H*.86-(dy-28))*((x-W*.82)/(W*.18+20));const u=(f-.18)/.64;return dy-28-2*u*(1-u)*28};for(const fr of[.06,.18,.34,.66,.82,.94]){const x=W*fr,yb=railY(x);cx.beginPath();cx.moveTo(x,yb);cx.lineTo(x,yb+26);cx.stroke()}
 // fisher from behind + pets
 const cxp=W/2,cyp=H*.9;
-const tipX=cxp+44+(lx-cxp)*.3,tipY=H*.56+Math.sin(t*20)*1.5*(1+R.d),hx=cxp+18,hyy=cyp-88;
+const tipX=cxp+44+(lx-cxp)*.3,tipY=H*.56+Math.sin(t*20)*1.5*(1+R.d);
 {const pets=crewCards().slice(0,2);pets.forEach((c,i)=>{const px=i?cxp+72:cxp-72,py=cyp+34,c1=TR[c.a].c,c2=c.b>=0?TR[c.b].c:c1,ol=sh(c1==='#2a2a33'?'#55556a':c1,-.45),k=.62;cx.save();cx.translate(px,py);cx.scale(k,c.hungry?k*.8:k);
 cx.fillStyle='#00000030';cx.beginPath();cx.ellipse(0,26,30,7,0,0,7);cx.fill();
 cx.lineCap='round';cx.beginPath();cx.moveTo(-10,14);cx.quadraticCurveTo(-42,8,-36+Math.sin(t*2.5+i)*6,-24);cx.strokeStyle=OL;cx.lineWidth=11;cx.stroke();cx.strokeStyle=c1;cx.lineWidth=7.5;cx.stroke();
@@ -438,43 +438,61 @@ const bend=brace*11;
 const tX=tipX,tY=tipY-brace*16;
 const outfit=character(),jacketShade=sh(outfit.jacket,-.18);
 cx.strokeStyle='#ffffffee';cx.lineWidth=1.6;cx.beginPath();cx.moveTo(tX,tY);cx.quadraticCurveTo((tX+lineX)/2,(tY+lineY)/2+(ld||R.rush>0?0:10),lineX,lineY);cx.stroke();
-cx.fillStyle='#23394338';cx.beginPath();cx.ellipse(cxp,cyp+31,32,7,0,0,7);cx.fill();
-for(const side of [-1,1]){
- const footX=cxp+side*16,footY=cyp+(side<0?24:12);
- limb([[cxp+shift+side*9,cyp-31+bend],[footX+side*(3+brace*7),footY-23],[footX,footY]],13,side<0?'#344c68':'#446887');
- blob(()=>cx.roundRect(footX-10,footY-3,21,13,6),'#63443b',2);
+const hipX=cxp+shift;
+const hipY=cyp-49+bend;
+const shoulderX=hipX-brace*9+3;
+const shoulderY=hipY-56;
+const headX=shoulderX+3;
+const headY=shoulderY-25;
+const bootColor='#63443b';
+const legs=[
+ {side:-1,x:cxp-19,y:cyp+23,shade:'#334d68'},
+ {side:1,x:cxp+22,y:cyp+9,shade:'#466987'}
+];
+for(const leg of legs){
+ const hip=[hipX+leg.side*10,hipY];
+ const knee=[(hip[0]+leg.x)/2+leg.side*(4+brace*4),(hipY+leg.y)/2-brace*3];
+ const ankle=[leg.x,leg.y];
+ limb([hip,knee],15,leg.shade);
+ limb([knee,ankle],11,leg.shade);
+ cx.fillStyle='#23394338';cx.beginPath();cx.ellipse(leg.x,leg.y+8,13,4,0,0,7);cx.fill();
+ blob(()=>cx.roundRect(leg.x-9,leg.y-3,19,11,5),bootColor,1.8);
 }
-cx.save();
-cx.translate(shift,bend);
+const leftShoulder=[shoulderX-17,shoulderY+5];
+const rightShoulder=[shoulderX+18,shoulderY+1];
+const lift=cheer?ease(cl((LAND.t-1.05)/.23,0,1)):0;
+const leftElbow=[leftShoulder[0]-10,leftShoulder[1]+22-lift*31];
+const leftHand=[leftShoulder[0]-5-lift*10,leftShoulder[1]+42-lift*76];
+limb([leftShoulder,leftElbow,leftHand],11,jacketShade);
+blob(()=>cx.ellipse(...leftHand,4.6,5.4,-.3,0,7),outfit.skin,1.4);
+blob(()=>cx.roundRect(headX-5,headY+10,10,18,4),sh(outfit.skin,-.12),1.5);
 const jacket=()=>{
- cx.moveTo(cxp-16,cyp-103);
- cx.bezierCurveTo(cxp-30,cyp-99,cxp-28,cyp-64,cxp-24,cyp-33);
- cx.quadraticCurveTo(cxp,cyp-24,cxp+24,cyp-33);
- cx.bezierCurveTo(cxp+29,cyp-62,cxp+28,cyp-98,cxp+16,cyp-103);
+ cx.moveTo(leftShoulder[0],leftShoulder[1]-5);
+ cx.quadraticCurveTo(shoulderX-7,shoulderY-8,headX-5,headY+22);
+ cx.quadraticCurveTo(shoulderX+8,shoulderY-8,rightShoulder[0],rightShoulder[1]-4);
+ cx.quadraticCurveTo(shoulderX+25,shoulderY+11,hipX+15,hipY-19);
+ cx.lineTo(hipX+17,hipY+5);
+ cx.quadraticCurveTo(hipX,hipY+11,hipX-17,hipY+5);
+ cx.quadraticCurveTo(hipX-13,hipY-14,leftShoulder[0]-3,leftShoulder[1]+10);
  cx.closePath();
 };
-const leftHand=cheer?[cxp-39,cyp-126+Math.sin(t*8)*3]:[cxp-23,cyp-50];
-const leftElbow=cheer?[cxp-36,cyp-102]:[cxp-31,cyp-65];
-limb([[cxp-19,cyp-91],leftElbow,leftHand],13,jacketShade);
-blob(()=>cx.ellipse(...leftHand,5.8,6.5,0,0,7),outfit.skin,1.7);
-blob(jacket,outfit.jacket,2.4);
-shade(jacket,()=>cx.ellipse(cxp+26,cyp-59,15,38,.12,0,7),jacketShade);
-blob(()=>cx.ellipse(cxp,cyp-94,17,10,0,0,7),jacketShade,1.8);
-cx.strokeStyle='#fff1b1';cx.lineWidth=2.5;cx.beginPath();cx.moveTo(cxp-15,cyp-39);cx.quadraticCurveTo(cxp,cyp-33,cxp+15,cyp-39);cx.stroke();
-const gripX=hx,gripY=hyy+14-brace*22;
-cx.lineCap='round';cx.beginPath();cx.moveTo(gripX+1,gripY+14);cx.lineTo(gripX,gripY);
-cx.quadraticCurveTo(hx+(tipX-hx)*.3,tY+40+brace*25-bend,tX-shift,tY-bend);
-cx.strokeStyle=OL;cx.lineWidth=6;cx.stroke();cx.strokeStyle='#946444';cx.lineWidth=3;cx.stroke();
-limb([[cxp+19,cyp-91],[cxp+30,cyp-69],[gripX,gripY]],13,outfit.jacket);
-blob(()=>cx.ellipse(gripX,gripY,6,7,-.35,0,7),outfit.skin,1.8);
-const hd=cyp-120;
-blob(()=>cx.ellipse(cxp,hd,21*outfit.width,20,0,0,7),outfit.hair,2.1);
-for(const side of [-1,1])blob(()=>cx.ellipse(cxp+side*19,hd+5,4.5,5.5,0,0,7),outfit.skin,1.6);
-drawPlayerDetails(cxp,hd,1.9,outfit,true);
-drawPlayerHat(cxp,hd-9,1.9,outfit);
-cx.restore();
-
-
+blob(jacket,outfit.jacket,2.1);
+shade(jacket,()=>cx.ellipse(shoulderX+25,shoulderY+30,16,42,.13,0,7),jacketShade);
+cx.strokeStyle=sh(outfit.jacket,-.27);cx.lineWidth=1.2;cx.beginPath();
+cx.moveTo(shoulderX-13,shoulderY+13);cx.quadraticCurveTo(shoulderX,shoulderY+22,shoulderX+13,shoulderY+12);
+cx.moveTo(hipX-12,hipY);cx.quadraticCurveTo(hipX,hipY+4,hipX+12,hipY);cx.stroke();
+const gripX=rightShoulder[0]+11,gripY=rightShoulder[1]+16-brace*15;
+const rightElbow=[rightShoulder[0]+17,rightShoulder[1]+24];
+cx.lineCap='round';cx.beginPath();cx.moveTo(gripX-4,gripY+17);cx.lineTo(gripX,gripY);
+cx.quadraticCurveTo(gripX+8,tY+40+brace*22,tX,tY);
+cx.strokeStyle=OL;cx.lineWidth=5;cx.stroke();cx.strokeStyle='#946444';cx.lineWidth=2.6;cx.stroke();
+limb([rightShoulder,rightElbow, [gripX,gripY]],11,outfit.jacket);
+blob(()=>cx.ellipse(gripX,gripY,4.6,5.5,-.35,0,7),outfit.skin,1.5);
+blob(()=>cx.ellipse(headX,headY,13.5*outfit.width,15.5,-.12,0,7),outfit.skin,1.8);
+blob(()=>cx.ellipse(headX-1,headY-3,13.8*outfit.width,13.5,-.12,0,7),outfit.hair,1.8);
+blob(()=>cx.ellipse(headX+12*outfit.width,headY+4,3.5,4.6,-.2,0,7),outfit.skin,1.25);
+drawPlayerDetails(headX,headY,1.2,outfit,true);
+drawPlayerHat(headX,headY-8,1.24,outfit);
 
 if(R.freeze>0&&!ld){cx.fillStyle='rgba(200,235,255,.22)';cx.fillRect(0,0,W,H)}if(R.midas>0&&!ld){cx.fillStyle='rgba(255,215,90,.14)';cx.fillRect(0,0,W,H)}if(R.power>0&&!ld){cx.fillStyle='rgba(80,160,255,'+(.08+Math.sin(t*10)*.04)+')';cx.fillRect(0,0,W,H)}
 if(R.slow>0&&!ld){cx.fillStyle='rgba(120,180,255,'+(.12+Math.sin(t*4)*.03)+')';cx.fillRect(0,0,W,H)}
