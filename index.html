@@ -91,7 +91,7 @@ body{overflow:hidden;overscroll-behavior:none}
 }
 </style></head><body>
 <button id="createCharacter" type="button">เลือกตัวละคร</button>
-<div class="game-version">Nekofish · เวอร์ชันทดลอง 4</div>
+<div class="game-version">Nekofish · เวอร์ชันทดลอง 5</div>
 <div class="fig" id="fig"><canvas id="cv"></canvas><div id="toast"></div></div>
 <div id="modal"><div class="mbox" id="mbox"></div></div>
 <script>
@@ -215,7 +215,7 @@ if(sheet==='character'){
  <label>ตัวละครที่จะเล่น <select name="id">${Object.entries(characters).map(([id,preset])=>`<option value="${id}" ${id===colors.id?'selected':''}>${preset.name}</option>`).join('')}</select></label>
  <label>ชุดสำเร็จรูป <select name="outfit"><option value="">เลือกชุด</option><option value="captain">กันฝนสีเหลือง</option><option value="pearl">ชุดสีม่วง</option><option value="wave">ชุดสีฟ้า</option></select></label>
  <div class="character-colors">${Object.entries(characterFields).map(([key,label])=>`<label>${label}<input type="color" name="${key}" value="${colors[key]}"></label>`).join('')}</div>
- <div class="character-actions"><button type="button" data-reset-look>รีลุค</button><button class="main" type="button" id="mClose">เสร็จแล้ว</button></div>
+ <div class="character-actions"><button class="main" type="button" id="mClose">เสร็จแล้ว</button></div>
  </form>`;
  drawCharacterPreview($('#characterForm'));
  return;
@@ -859,13 +859,6 @@ function saveCharacterSelection(form){
  drawCharacterPreview(form);
 }
 mbox.addEventListener('click',e=>{if(performance.now()-openedAt<450)return;const tg=e.target;
-if(tg.closest('[data-reset-look]')){
- const form=$('#characterForm');
- applyCharacterColors(form,characters[characterId(form.elements.id.value)],Object.keys(characterFields));
- form.elements.outfit.value='';
- saveCharacterSelection(form);
- return;
-}
 if(tg.closest('#amber')){hits++;if(hits>=5){reveal();return}crackView();$('#amber').classList.add('knock');return}
 if(tg.id==='mAgain'){openCrack();return}
 if(tg.closest('#mClose')){closeSheet();return}
