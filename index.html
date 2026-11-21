@@ -75,13 +75,17 @@ button.wait{position:relative;overflow:hidden;opacity:1;background:#d9cbb2;box-s
 .foot button{font-size:14px;min-height:44px}
 .game-version{position:fixed;right:max(10px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));z-index:2;pointer-events:none;padding:3px 8px;border-radius:12px;background:#142b38e6;color:#fff;font:12px/1.4 Sarabun,system-ui,sans-serif}
 body{overflow:hidden;overscroll-behavior:none}
-#gameNav{position:fixed;z-index:4;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(620px,calc(100% - 20px));padding:7px;border-radius:17px;background:#214653;color:#fff4db;box-shadow:0 8px 22px #142b3850}
+#gameNav{position:fixed;z-index:4;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(540px,calc(100% - 22px));color:#fff7e7}
 #gameNav[hidden],.nav-row[hidden],#voyageCatch[hidden]{display:none}
-.nav-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
-.nav-row button{min-height:44px;padding:3px 4px;font-size:clamp(11px,2.9vw,15px);border-radius:10px;white-space:normal}
-.nav-row button.nav-main{background:#ffc47b;color:#422b20}
-#voyageCatch{display:block;text-align:center;font:500 13px Mitr,sans-serif;margin:0 0 5px}
+.nav-row{display:flex;align-items:center;justify-content:center;gap:7px}
+.nav-row button{flex:1;min-height:44px;padding:5px 9px;font-size:clamp(12px,3vw,15px);border-radius:999px;background:#24434eee;color:#fff7e7;box-shadow:0 4px 12px #152c4650,inset 0 0 0 1px #ffffff27;white-space:nowrap}
+.nav-row button.nav-main{flex:1.65;min-height:52px;background:linear-gradient(#ffdda4,#efaa61);color:#533424;box-shadow:0 4px 0 #92563e,0 7px 18px #162c4355;font-weight:600}
+#voyageCatch{display:table;margin:0 auto 7px;padding:4px 11px;font:500 13px Mitr,sans-serif;border-radius:999px;background:#24434ed9}
 #voyageCatch b{color:#ffdc9a}
+.mbox:has(.port-directory){text-align:left;background:linear-gradient(150deg,#fff7e6,#f5e7d2);color:#294751}
+.port-directory{display:grid;gap:8px}
+.port-directory>button{display:flex;align-items:center;gap:10px;text-align:left;min-height:48px;padding:6px 11px;border-radius:14px;background:#fffdf2;color:#294751}
+.port-directory small{margin-left:auto;color:#55747a;font:400 12px Sarabun,sans-serif}
 .game-version{top:max(7px,env(safe-area-inset-top));bottom:auto}
 .inventory-tabs,.inventory-pages{display:flex;justify-content:center;align-items:center;gap:6px}
 .inventory-tabs button,.inventory-pages button{min-height:40px;padding:3px 8px;font-size:13px;flex:1}
@@ -98,19 +102,14 @@ body{overflow:hidden;overscroll-behavior:none}
 @keyframes tank-drift{to{transform:translate(17px,-6px)}}
 @media(prefers-reduced-motion:reduce){.tank-fish{animation:none}}
 </style></head><body>
-<div class="game-version">Nekofish · เวอร์ชันทดลอง 25</div>
+<div class="game-version">Nekofish · เวอร์ชันทดลอง 26</div>
 <div class="fig" id="fig"><canvas id="cv"></canvas><div id="toast"></div></div>
 <nav id="gameNav" aria-label="เมนูเกม">
  <span id="voyageCatch" hidden></span>
  <div id="portNav" class="nav-row">
   <button type="button" class="nav-main" data-nav="sail">ออกเรือ</button>
-  <button type="button" data-nav="amber">ทุบอำพัน</button>
   <button type="button" data-nav="cards">บ้านแมว</button>
-  <button type="button" data-nav="gear">อัปเกรด</button>
-  <button type="button" data-nav="box">หีบปลา</button>
-  <button type="button" data-nav="shop">ขายปลา</button>
-  <button type="button" data-nav="aquarium">ตู้ปลา</button>
-  <button type="button" data-nav="quest">ภารกิจ</button>
+  <button type="button" data-nav="directory">จัดการท่าเรือ</button>
  </div>
  <div id="seaNav" class="nav-row" hidden>
   <button type="button" class="nav-main" data-nav="cast">ตกปลา</button>
@@ -275,7 +274,7 @@ gameNav.addEventListener('click',e=>{
  const button=e.target.closest('[data-nav]');
  if(!button||modal.classList.contains('on'))return;
  const action=button.dataset.nav;
- if(['gear','aquarium','quest'].includes(action))openSheet(action);
+ if(['gear','aquarium','quest','directory'].includes(action))openSheet(action);
  else act(action);
 });
 function renderAquarium(){
@@ -291,7 +290,19 @@ function renderAquarium(){
  ${milestone?`<button id="collectionPrize" data-milestone="${milestone}">รับรางวัลสมุดปลา +${milestone*10} เหรียญ</button>`:''}
  <button id="mClose">ปิด</button>`;
 }
+const portDirectory=[
+ ['amber','ทุบอำพัน','รับแมว'],
+ ['box','หีบปลา','ดูของที่จับได้'],
+ ['shop','ร้านปลา','ขายปลา'],
+ ['gear','อัปเกรด','คันเบ็ดและเรือ'],
+ ['aquarium','ตู้ปลา','เลี้ยงและสะสม'],
+ ['quest','ภารกิจ','รับรางวัล']
+];
 function renderSheet(){
+if(sheet==='directory'){
+ mbox.innerHTML=`<h2>จัดการท่าเรือ</h2><div class="port-directory">${portDirectory.map(([key,title,detail])=>`<button type="button" data-directory="${key}">${title}<small>${detail}</small></button>`).join('')}</div><button id="mClose">กลับท่าเรือ</button>`;
+ return;
+}
 if(sheet==='aquarium'){renderAquarium();return}
 if(sheet==='gear'){
  mbox.innerHTML=`<h2>อัปเกรด</h2><button type="button" data-gear="rod">คันเบ็ด Lv.${S.rod}</button><button type="button" data-gear="boat">อู่เรือ Lv.${S.boat}</button><button id="mClose">ปิด</button>`;
@@ -762,7 +773,18 @@ function drawSupplyBoat(x,y){
  lbl('เรือเสบียง · กระเป๋า',x,y+40);
  if(mode==='idle')hitR(x-55,y-25,110,71,'supplyBag');
 }
+let sea3D,seaLoading=false;
 function drawSeaFromDeck(zone){
+ if(!seaLoading){
+  seaLoading=true;
+  import('./sea-view.js').then(({createSeaView})=>{sea3D=createSeaView()}).catch(()=>{});
+ }
+ if(sea3D){
+  try{
+   const frame=sea3D.draw(t,W,H,SKY[zone-1]);
+   if(frame){cx.drawImage(frame,0,0,W,H);return}
+  }catch{sea3D=null}
+ }
  const colors=SKY[zone-1],water=cx.createLinearGradient(0,0,0,H);
  water.addColorStop(0,sh(colors[3],-.06));water.addColorStop(1,sh(colors[2],-.16));
  cx.fillStyle=water;cx.fillRect(-12,-12,W+24,H+24);
@@ -1042,6 +1064,12 @@ mbox.addEventListener('click',e=>{if(performance.now()-openedAt<450)return;const
 if(tg.closest('#amber')){hits++;if(hits>=5){reveal();return}crackView();$('#amber').classList.add('knock');return}
 if(tg.id==='mAgain'){openCrack();return}
 if(tg.closest('#mClose')){closeSheet();return}
+if(sheet==='directory'){
+ const action=tg.closest('[data-directory]')?.dataset.directory;
+ if(action==='amber')openCrack();
+ else if(portDirectory.some(([key])=>key===action))openSheet(action);
+ return;
+}
 if(sheet==='gear'){
  const gear=tg.closest('[data-gear]')?.dataset.gear;
  if(gear==='rod'||gear==='boat')openSheet(gear);
