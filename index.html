@@ -76,7 +76,7 @@ button.wait{position:relative;overflow:hidden;opacity:1;background:#d9cbb2;box-s
 .game-version{position:fixed;right:max(10px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));z-index:2;pointer-events:none;padding:3px 8px;border-radius:12px;background:#142b38e6;color:#fff;font:12px/1.4 Sarabun,system-ui,sans-serif}
 body{overflow:hidden;overscroll-behavior:none}
 </style></head><body>
-<div class="game-version">Nekofish · เวอร์ชันทดลอง 10</div>
+<div class="game-version">Nekofish · เวอร์ชันทดลอง 11</div>
 <div class="fig" id="fig"><canvas id="cv"></canvas><div id="toast"></div></div>
 <div id="modal"><div class="mbox" id="mbox"></div></div>
 <script>
@@ -543,6 +543,43 @@ function drawBubble(){if(!BUB||BUB.t<=0||$('#toast').classList.contains('on'))re
 const OL='#2a1d18';
 function blob(fn,col,w=2.2){cx.beginPath();fn();cx.fillStyle=col;cx.fill();if(w>0){cx.strokeStyle=OL;cx.lineWidth=w;cx.lineJoin='round';cx.stroke()}}
 function shade(fn,clipFn,col){cx.save();cx.beginPath();fn();cx.clip();cx.beginPath();clipFn();cx.fillStyle=col;cx.fill();cx.restore()}
+// Transparent sprite cels. Each cel shares a planted baseline and a rod grip anchor.
+const castCels=[
+ {head:[11,-37],grip:[21,-21],body:'M-22 -5 Q-28 -19 -17 -27 Q-4 -34 13 -25 Q22 -18 21 -5 Q11 2 -16 0Z',angle:-.85,tail:'M-18 -12 Q-36 -13 -34 -34'},
+ {head:[1,-34],grip:[12,-28],body:'M-22 -5 Q-27 -19 -14 -23 Q4 -29 15 -20 Q22 -10 19 -4 Q4 3 -16 0Z',angle:-2.05,tail:'M-18 -10 Q-37 -8 -39 -25'},
+ {head:[16,-43],grip:[29,-33],body:'M-20 -3 Q-27 -12 -16 -24 Q-1 -29 16 -32 Q23 -30 22 -10 Q12 1 -14 1Z',angle:-1.0,tail:'M-18 -10 Q-38 -17 -39 -40'},
+ {head:[23,-32],grip:[36,-21],body:'M-23 -4 Q-28 -14 -17 -21 Q4 -24 25 -22 Q31 -17 23 -6 Q10 2 -17 0Z',angle:-.42,tail:'M-19 -10 Q-37 -10 -44 -29'}
+];
+const castSprites=new Map();
+function captainCastSprite(cat,frame){
+ const type=cat?.a??-1,key=type+':'+frame;
+ if(castSprites.has(key))return castSprites.get(key);
+ const {c:fur,p:points}=TR[type]||{c:'#e59a4a'};
+ const shade=sh(fur,-.14),light=sh(fur,.38),dot=fur==='#2a2a33'?'#fff2de':'#3a2e38';
+ const {head:[x,y],grip:[px,py],body,tail}=castCels[frame];
+ const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="-48 -68 100 72" width="200" height="144">
+ <ellipse cy="-1" rx="25" ry="3" fill="#203d45" opacity=".19"/>
+ <path d="${tail}" fill="none" stroke="${shade}" stroke-width="8" stroke-linecap="round"/>
+ <path d="${body}" fill="${fur}"/>
+ <ellipse cx="-11" cy="-7" rx="9" ry="7" fill="${shade}"/>
+ <ellipse cx="12" cy="-3.5" rx="7" ry="3.5" fill="${light}"/>
+ <g transform="translate(${x} ${y})">
+ <path d="M-17 -4 Q-24 -23 -16 -23 Q-11 -21 -4 -14 H6 Q13 -22 17 -20 Q21 -18 19 -3Z" fill="${points||fur}"/>
+ <path d="M-16 -9 Q-20 -20 -15 -19 L-8 -12 M12 -11 L17 -17 Q19 -18 17 -8" fill="#f4abb1"/>
+ <path d="M-19 0 C-20 -12 -9 -16 1 -15 C13 -15 23 -8 23 1 C23 10 13 15 1 15 C-10 15 -20 11 -19 0Z" fill="${fur}"/>
+ <ellipse cx="6" cy="7" rx="8" ry="5" fill="${points||light}" opacity=".7"/>
+ <ellipse cx="-9" cy="6" rx="4" ry="2" fill="#ef909d" opacity=".55"/>
+ <ellipse cx="17" cy="6" rx="3.5" ry="2" fill="#ef909d" opacity=".55"/>
+ <circle cx="-4" cy="0" r="1.9" fill="${dot}"/><circle cx="12" cy="0" r="1.9" fill="${dot}"/>
+ <path d="M4 5 Q7 3 9 5 Q7 9 4 5" fill="#cb7886"/>
+ </g>
+ <path d="M12 -10 Q${px-5} ${py+1} ${px} ${py}" stroke="${shade}" stroke-width="9" stroke-linecap="round" fill="none"/>
+ </svg>`;
+ const image=new Image();
+ image.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+ castSprites.set(key,image);
+ return image;
+}
 function drawCatRod(gripX,gripY,tipX,tipY,bend){
  cx.lineCap='round';cx.beginPath();cx.moveTo(gripX-7,gripY+6);cx.lineTo(gripX,gripY);
  cx.quadraticCurveTo(gripX+(tipX-gripX)*.56,tipY+bend,tipX,tipY);
@@ -568,11 +605,20 @@ mates.forEach((cat,i)=>{
  PETPOS.push({x,y:y-43,id:cat.id});
 });
 const catX=bx+8+(fight?PA.swing*11:0),catY=by-6+(fight?PA.crouch*7:0);
-drawPet(catX,catY,captain,fight?1.05:1);
+const progress=mode==='wait'?cast:0;
+const frame=mode==='wait'&&cast<1?(cast<.34?1:cast<.52?2:3):0;
+const pose=castCels[frame];
+if(mode==='port'||mode==='idle'){
+ for(let i=1;i<castCels.length;i++)captainCastSprite(captain,i);
+}
+const sprite=fight?null:captainCastSprite(captain,frame);
+if(sprite?.naturalWidth){
+ cx.drawImage(sprite,catX-48,catY-68,100,72);
+ if(captain)drawAcc(CH[captain.a].acc,catX+pose.head[0],catY+pose.head[1],catX,catY);
+}else drawPet(catX,catY,captain,fight?1.05:1);
 if(captain)PETPOS.push({x:catX,y:catY-54,id:captain.id});
-const castLift=mode==='wait'?Math.sin(cast*Math.PI)*.85:0;
-const rodAngle=-.8-castLift+(mode==='bite'?Math.sin(t*27)*.09:0);
-const gripX=catX+19,gripY=catY-17;
+const rodAngle=pose.angle+(mode==='bite'?Math.sin(t*27)*.09:0);
+const gripX=catX+pose.grip[0],gripY=catY+pose.grip[1];
 const tipx=gripX+Math.cos(rodAngle)*67,tipy=gripY+Math.sin(rodAngle)*67;
 if(!fight){
  drawCatRod(gripX,gripY,tipx,tipy,mode==='bite'?12:4);
@@ -588,7 +634,7 @@ if(mode==='idle'&&Math.sin(t*1.7)>.97){cx.fillStyle='#fff';cx.beginPath();cx.arc
 if(T&&!fight){
 let fx=W*.74,fy=hz+(H-hz)*.42+Math.sin(t*2)*2;
 if(mode==='idle'){fx=tipx+6;fy=by+4}
-else if(mode==='wait'){const c=cast;fx=tipx+(fx-tipx)*c;fy=tipy+(fy-tipy)*c-Math.sin(c*Math.PI)*60}
+else if(mode==='wait'){const flight=cl((progress-.34)/.66,0,1);fx=tipx+(fx-tipx)*flight;fy=tipy+(fy-tipy)*flight-Math.sin(flight*Math.PI)*53}
 else if(mode==='bite')fy+=7+Math.sin(t*34)*3;
 else if(mode==='reel'){fx=40+R.x*(W-80);fy=hz+(H-hz)*.56}
 cx.strokeStyle='#ffffffaa';cx.lineWidth=1.2;cx.beginPath();cx.moveTo(tipx,tipy);
