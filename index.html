@@ -74,31 +74,9 @@ button.wait{position:relative;overflow:hidden;opacity:1;background:#d9cbb2;box-s
 .foot{margin-top:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .foot button{font-size:14px;min-height:44px}
 .game-version{position:fixed;right:max(10px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));z-index:2;pointer-events:none;padding:3px 8px;border-radius:12px;background:#142b38e6;color:#fff;font:12px/1.4 Sarabun,system-ui,sans-serif}
-#createCharacter{position:fixed;top:max(8px,env(safe-area-inset-top));right:10px;z-index:3;font-size:14px}
 body{overflow:hidden;overscroll-behavior:none}
-.mbox:has(#characterForm){overflow:visible;max-height:none;padding:10px;gap:6px}
-#characterForm{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-#characterForm label{display:grid;gap:2px;font-size:13px;text-align:left}
-.character-picker{grid-column:1/-1;display:flex;gap:4px;margin:0;padding:0;border:0}
-.character-picker legend{font-size:13px;text-align:left}
-#characterForm .character-picker label{position:relative;display:flex;flex:1;text-align:center}
-.character-picker input{position:absolute;opacity:0}
-.character-picker span{display:grid;place-items:center;flex:1;min-height:44px;padding:3px;background:var(--card);border:1px solid var(--line);border-radius:10px}
-.character-picker input:checked+span{background:#ffe4a8;border-color:#bd771f;color:#42311b}
-.character-picker input:focus-visible+span{outline:2px solid #3a7780}
-#characterForm select{height:38px;width:100%;font:inherit}
-#characterPreview{display:block;width:min(100%,240px,34dvh);height:auto;margin:auto;border:1px solid var(--line);border-radius:16px;background:linear-gradient(#fff0d8 45%,#b8e6de 46%,#79c6c5)}
-.character-colors,.character-actions{grid-column:1/-1;display:flex;justify-content:space-between;gap:4px}
-#characterForm input[type=color]{width:100%;min-width:35px;height:40px}
-.character-actions button{flex:1;padding:4px;min-height:40px;font-size:13px}
-@media(max-height:540px){
- .mbox:has(#characterForm){grid-template-columns:minmax(72px,1fr) minmax(210px,2fr);align-items:center}
- .mbox:has(#characterForm) h2{grid-column:1/-1}
- #characterForm{grid-column:2}
-}
 </style></head><body>
-<button id="createCharacter" type="button">เลือกตัวละคร</button>
-<div class="game-version">Nekofish · เวอร์ชันทดลอง 8</div>
+<div class="game-version">Nekofish · เวอร์ชันทดลอง 9</div>
 <div class="fig" id="fig"><canvas id="cv"></canvas><div id="toast"></div></div>
 <div id="modal"><div class="mbox" id="mbox"></div></div>
 <script>
@@ -190,45 +168,11 @@ let LAND=null,mode='port',T=null,R=null,F=null,item=null,waitT=0,biteT=0,holding
 function toast(m,ms=1800){const el=$('#toast');el.style.top=(mode==='reel'||mode==='fight'||mode==='land')?'128px':'52px';el.textContent=m;el.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('on'),ms)}
 
 let sheet=null;
-const characters={
- captain:{name:'กัปตันโมจิ',skin:'#f8d6b6',hair:'#49322e',jacket:'#ffce62',hat:'#76cbbf',width:1},
- pearl:{name:'นักตกปลามุก',skin:'#bd805e',hair:'#322738',jacket:'#a795dc',hat:'#faabb4',width:1.12},
- wave:{name:'นักสำรวจคราม',skin:'#e2ac82',hair:'#75492c',jacket:'#72b6e4',hat:'#f3a769',width:.9}
-};
-const characterId=id=>Object.hasOwn(characters,id)?id:'captain';
-const character=()=>{
- const id=characterId(S.character?.id),preset=characters[id];
- const colors=Object.keys(characterFields).map(key=>{
-  const value=S.character?.[key];
-  return [key,typeof value==='string'&&/^#[0-9a-f]{6}$/i.test(value)?value:preset[key]];
- });
- return {...preset,...Object.fromEntries(colors),id};
-};
-const characterFields={skin:'สีผิว',hair:'สีผม',jacket:'สีเสื้อกันฝน',hat:'สีหมวก'};
-const createCharacter=$('#createCharacter');
-createCharacter.addEventListener('click',()=>openSheet('character'));
-function setMode(m){
- mode=m;
- createCharacter.hidden=m!=='port';
- if(m==='port'&&sheet)renderSheet();
-}
+function setMode(m){mode=m;if(m==='port'&&sheet)renderSheet()}
 const CREW=3;
 const rodCost=()=>40*S.rod*S.rod,boatCost=()=>70*S.boat*S.boat;
 const perksHTML=()=>{const ac=activeCombos().map(c=>c[2]);return '<div><b>คู่หู</b> พาแมวคู่นี้ขึ้นเรือด้วยกันได้โบนัส</div>'+COMBO.map(([a,b,n,d])=>`<div style="${ac.includes(n)?'color:#3aa35a;font-weight:600':'opacity:.7'}">${ac.includes(n)?'✓ ':''}${CH[a].n} + ${CH[b].n} · ${n}: ${d}</div>`).join('')+'<div style="margin-top:6px">แมวบนเรือที่<b>อิ่ม</b>เท่านั้นที่ช่วยและนับคู่หู</div>'};
 function renderSheet(){
-if(sheet==='character'){
- const colors=character();
- mbox.innerHTML=`<h2>เลือกตัวละคร</h2><canvas id="characterPreview" width="560" height="280" role="img" aria-label="ตัวอย่างตัวละครที่เลือก"></canvas><form id="characterForm">
- <fieldset class="character-picker"><legend>ตัวละครที่จะเล่น</legend>
- ${Object.entries(characters).map(([id,preset])=>`<label><input type="radio" name="playerChoice" value="${id}" ${id===colors.id?'checked':''}><span>${preset.name}</span></label>`).join('')}
- </fieldset>
- <label>ชุดสำเร็จรูป <select name="outfit"><option value="">เลือกชุด</option><option value="captain">กันฝนสีเหลือง</option><option value="pearl">ชุดสีม่วง</option><option value="wave">ชุดสีฟ้า</option></select></label>
- <div class="character-colors">${Object.entries(characterFields).map(([key,label])=>`<label>${label}<input type="color" name="${key}" value="${colors[key]}"></label>`).join('')}</div>
- <div class="character-actions"><button class="main" type="button" id="mClose">เสร็จแล้ว</button></div>
- </form>`;
- drawCharacterPreview($('#characterForm'));
- return;
-}
 if(sheet==='box'||sheet==='shop'){const shop=sheet==='shop',got=FISH.filter(f=>S.book[f[0]]).length,sel=S.box.filter(f=>f.sell),selv=sel.reduce((a,f)=>a+priceOf(f),0);
 const pool=[...S.box].sort((a,b)=>b.g-a.g||b.v-a.v);
 const row=f=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)"><span style="flex:none;width:54px">${fishSVG('#cfe0e8').replace('width="120" height="70"','width="54" height="32"')}</span><span style="flex:1;text-align:left">${f.n} <b style="color:${GC[f.g]}">${GR[f.g]}</b>${f.n===SPECIAL()?' <b style="color:#d6304e">ขายดี</b>':''}<br><span class="hint" style="margin:0">${f.cm} ซม. · ${shop?'ร้านให้ '+priceOf(f):'ราคาประมาณ '+priceOf(f)} เหรียญ</span></span>${!shop?'':`<button data-mark="${f.id}" style="flex:none;min-height:40px;font-size:14px;${f.sell?'background:var(--amb);color:#2a1606;box-shadow:none':''}">${f.sell?'คัดขาย ✓':'เก็บไว้'}</button>`}</div>`;
@@ -412,7 +356,7 @@ cx.lineWidth=3;const railY=x=>{const f=x/W;if(f<.18)return H*.86+(dy-28-H*.86)*(
 // fisher from behind + pets
 const cxp=W/2,cyp=H*.9;
 const tipX=cxp+44+(lx-cxp)*.3,tipY=H*.56+Math.sin(t*20)*1.5*(1+R.d);
-{const pets=crewCards().slice(0,2);pets.forEach((c,i)=>{const px=i?cxp+72:cxp-72,py=cyp+34,c1=TR[c.a].c,c2=c.b>=0?TR[c.b].c:c1,ol=sh(c1==='#2a2a33'?'#55556a':c1,-.45),k=.62;cx.save();cx.translate(px,py);cx.scale(k,c.hungry?k*.8:k);
+{const pets=crewCards().slice(1,3);pets.forEach((c,i)=>{const px=i?cxp+72:cxp-72,py=cyp+34,c1=TR[c.a].c,c2=c.b>=0?TR[c.b].c:c1,ol=sh(c1==='#2a2a33'?'#55556a':c1,-.45),k=.62;cx.save();cx.translate(px,py);cx.scale(k,c.hungry?k*.8:k);
 cx.fillStyle='#00000030';cx.beginPath();cx.ellipse(0,26,30,7,0,0,7);cx.fill();
 cx.lineCap='round';cx.beginPath();cx.moveTo(-10,14);cx.quadraticCurveTo(-42,8,-36+Math.sin(t*2.5+i)*6,-24);cx.strokeStyle=OL;cx.lineWidth=11;cx.stroke();cx.strokeStyle=c1;cx.lineWidth=7.5;cx.stroke();
 const bd=()=>cx.ellipse(0,-6,25,30,0,0,7);blob(bd,c1,2.6);shade(bd,()=>cx.ellipse(16,-2,16,34,0,0,7),sh(c1==='#2a2a33'?'#55556a':c1,-.22));
@@ -436,64 +380,22 @@ const brace=Math.max(pull,tension,ld&&!cheer?Math.sin(lp*Math.PI)*.85:0);
 const shift=cl((lx-cxp)/W,-.5,.5)*8-brace*9;
 const bend=brace*11;
 const tX=tipX,tY=tipY-brace*16;
-const outfit=character(),jacketShade=sh(outfit.jacket,-.18);
-cx.strokeStyle='#ffffffee';cx.lineWidth=1.6;cx.beginPath();cx.moveTo(tX,tY);cx.quadraticCurveTo((tX+lineX)/2,(tY+lineY)/2+(ld||R.rush>0?0:10),lineX,lineY);cx.stroke();
-const hipX=cxp+shift;
-const hipY=cyp-49+bend;
-const shoulderX=hipX-brace*9+3;
-const shoulderY=hipY-56;
-const headX=shoulderX+3;
-const headY=shoulderY-25;
-const bootColor='#63443b';
-const legs=[
- {side:-1,x:cxp-19,y:cyp+23,shade:'#334d68'},
- {side:1,x:cxp+22,y:cyp+9,shade:'#466987'}
-];
-for(const leg of legs){
- const hip=[hipX+leg.side*10,hipY];
- const knee=[(hip[0]+leg.x)/2+leg.side*(4+brace*4),(hipY+leg.y)/2-brace*3];
- const ankle=[leg.x,leg.y];
- limb([hip,knee],15,leg.shade);
- limb([knee,ankle],11,leg.shade);
- cx.fillStyle='#23394338';cx.beginPath();cx.ellipse(leg.x,leg.y+8,13,4,0,0,7);cx.fill();
- blob(()=>cx.roundRect(leg.x-9,leg.y-3,19,11,5),bootColor,1.8);
-}
-const leftShoulder=[shoulderX-17,shoulderY+5];
-const rightShoulder=[shoulderX+18,shoulderY+1];
-const lift=cheer?ease(cl((LAND.t-1.05)/.23,0,1)):0;
-const leftElbow=[leftShoulder[0]-10,leftShoulder[1]+22-lift*31];
-const leftHand=[leftShoulder[0]-5-lift*10,leftShoulder[1]+42-lift*76];
-limb([leftShoulder,leftElbow,leftHand],11,jacketShade);
-blob(()=>cx.ellipse(...leftHand,4.6,5.4,-.3,0,7),outfit.skin,1.4);
-blob(()=>cx.roundRect(headX-5,headY+10,10,18,4),sh(outfit.skin,-.12),1.5);
-const jacket=()=>{
- cx.moveTo(leftShoulder[0],leftShoulder[1]-5);
- cx.quadraticCurveTo(shoulderX-7,shoulderY-8,headX-5,headY+22);
- cx.quadraticCurveTo(shoulderX+8,shoulderY-8,rightShoulder[0],rightShoulder[1]-4);
- cx.quadraticCurveTo(shoulderX+25,shoulderY+11,hipX+15,hipY-19);
- cx.lineTo(hipX+17,hipY+5);
- cx.quadraticCurveTo(hipX,hipY+11,hipX-17,hipY+5);
- cx.quadraticCurveTo(hipX-13,hipY-14,leftShoulder[0]-3,leftShoulder[1]+10);
- cx.closePath();
-};
-blob(jacket,outfit.jacket,2.1);
-shade(jacket,()=>cx.ellipse(shoulderX+25,shoulderY+30,16,42,.13,0,7),jacketShade);
-cx.strokeStyle=sh(outfit.jacket,-.27);cx.lineWidth=1.2;cx.beginPath();
-cx.moveTo(shoulderX-13,shoulderY+13);cx.quadraticCurveTo(shoulderX,shoulderY+22,shoulderX+13,shoulderY+12);
-cx.moveTo(hipX-12,hipY);cx.quadraticCurveTo(hipX,hipY+4,hipX+12,hipY);cx.stroke();
-const gripX=rightShoulder[0]+11,gripY=rightShoulder[1]+16-brace*15;
-const rightElbow=[rightShoulder[0]+17,rightShoulder[1]+24];
-cx.lineCap='round';cx.beginPath();cx.moveTo(gripX-4,gripY+17);cx.lineTo(gripX,gripY);
-cx.quadraticCurveTo(gripX+8,tY+40+brace*22,tX,tY);
-cx.strokeStyle=OL;cx.lineWidth=5;cx.stroke();cx.strokeStyle='#946444';cx.lineWidth=2.6;cx.stroke();
-limb([rightShoulder,rightElbow, [gripX,gripY]],11,outfit.jacket);
-blob(()=>cx.ellipse(gripX,gripY,4.6,5.5,-.35,0,7),outfit.skin,1.5);
-blob(()=>cx.ellipse(headX,headY,13.5*outfit.width,15.5,-.12,0,7),outfit.skin,1.8);
-blob(()=>cx.ellipse(headX-1,headY-3,13.8*outfit.width,13.5,-.12,0,7),outfit.hair,1.8);
-blob(()=>cx.ellipse(headX+12*outfit.width,headY+4,3.5,4.6,-.2,0,7),outfit.skin,1.25);
-drawPlayerDetails(headX,headY,1.2,outfit,true);
-drawPlayerHat(headX,headY-8,1.24,outfit);
 
+cx.strokeStyle='#ffffffee';cx.lineWidth=1.6;cx.beginPath();cx.moveTo(tX,tY);cx.quadraticCurveTo((tX+lineX)/2,(tY+lineY)/2+(ld||R.rush>0?0:10),lineX,lineY);cx.stroke();
+const captain=crewCards()[0];
+const fur=captain?TR[captain.a].c:'#e59a4a';
+const catX=cxp+shift,catY=Math.min(H-12,cyp+24)+bend*.22;
+const gripX=catX+23,gripY=catY-21-brace*12;
+drawPet(catX,catY,captain,1.35);
+drawCatRod(gripX,gripY,tX,tY,brace*17);
+blob(()=>cx.ellipse(gripX,gripY,6,5,-.45,0,7),fur,1.5);
+if(cheer){
+ const lift=ease(cl((LAND.t-1.05)/.23,0,1));
+ const pawX=catX+4-lift*13,pawY=catY-15-lift*21;
+ cx.strokeStyle=OL;cx.lineWidth=9;cx.lineCap='round';cx.beginPath();cx.moveTo(catX+6,catY-13);cx.lineTo(pawX,pawY);cx.stroke();
+ cx.strokeStyle=fur;cx.lineWidth=6;cx.stroke();
+ blob(()=>cx.ellipse(pawX,pawY,5,5,0,0,7),fur,1.3);
+}
 if(R.freeze>0&&!ld){cx.fillStyle='rgba(200,235,255,.22)';cx.fillRect(0,0,W,H)}if(R.midas>0&&!ld){cx.fillStyle='rgba(255,215,90,.14)';cx.fillRect(0,0,W,H)}if(R.power>0&&!ld){cx.fillStyle='rgba(80,160,255,'+(.08+Math.sin(t*10)*.04)+')';cx.fillRect(0,0,W,H)}
 if(R.slow>0&&!ld){cx.fillStyle='rgba(120,180,255,'+(.12+Math.sin(t*4)*.03)+')';cx.fillRect(0,0,W,H)}
 if(SKFX&&!ld){const f=SKFX,u=f.t/f.dur,a=u<.15?u/.15:u>.75?(1-u)/.25:1,cd=f.card,LYY=PY(LZ);cx.save();cx.globalAlpha=Math.max(0,a);
@@ -568,7 +470,7 @@ if(L){L.lives--;if(L.lives<=0){L.ret=1;S.crew=S.crew.filter(id=>id!==L.id);toast
 save();setMode('idle')}
 function act(a){({sail,cast:doCast,far,home:()=>goHome(),hook,hold:strike,hit,dodge,amber:openCrack,box:()=>openSheet('box'),shop:()=>openSheet('shop'),cards:()=>openSheet('cards'),rod:()=>openSheet('rod'),boat:()=>openSheet('boat')})[a]?.()}
 
-const cv=$('#cv'),fig=$('#fig');let cx=cv.getContext('2d'),W=0,H=0;
+const cv=$('#cv'),fig=$('#fig');const cx=cv.getContext('2d');let W=0,H=0;
 const fit=()=>{const r=fig.getBoundingClientRect(),d=Math.min(2,devicePixelRatio||1);W=r.width;H=r.height;cv.width=W*d;cv.height=H*d;cx.setTransform(d,0,0,d,0,0)};
 const figRO=new ResizeObserver(fit);figRO.observe(fig);
 const ZP=[
@@ -634,88 +536,18 @@ cx.fillStyle='#e58a9a';cx.beginPath();cx.ellipse(hx+.5,hy+3,1.5,1.1,0,0,7);cx.fi
 cx.strokeStyle=OL;cx.lineWidth=1.1;cx.beginPath();cx.moveTo(hx-1.8,hy+5.3);cx.quadraticCurveTo(hx-.6,hy+6.8,hx+.5,hy+5.3);cx.quadraticCurveTo(hx+1.6,hy+6.8,hx+2.8,hy+5.3);cx.stroke();
 cx.strokeStyle='#ffffffaa';cx.lineWidth=.8;cx.beginPath();for(const s2 of[-1,1])for(const d of[-1,1]){cx.moveTo(hx+s2*8,hy+4);cx.lineTo(hx+s2*19,hy+2+d*3)}cx.stroke();
 if(L)drawAcc(CH[L.a].acc,hx,hy,x,y)}
-let PT={x:0,y:0},PA={swing:0,crouch:0},PETPOS=[],BUB=null,bubT=4;
+let PA={swing:0,crouch:0},PETPOS=[],BUB=null,bubT=4;
 function say(c,txt,dur){BUB={id:c.id,txt,t:dur||3}}
 function drawBubble(){if(!BUB||BUB.t<=0||$('#toast').classList.contains('on'))return;const p=PETPOS.find(q=>q.id===BUB.id);if(!p)return;cx.font='500 14px Mitr,sans-serif';cx.textAlign='center';const w=cx.measureText(BUB.txt).width+20,x=cl(p.x,w/2+6,W-w/2-6),y=p.y-30;cx.globalAlpha=Math.min(1,BUB.t*3);cx.fillStyle='#fffaf0';rr(x-w/2,y-16,w,28,12);cx.beginPath();cx.moveTo(p.x-5,y+11);cx.lineTo(p.x,y+19);cx.lineTo(p.x+5,y+11);cx.fill();cx.fillStyle='#1d2a30';cx.fillText(BUB.txt,x,y+3);cx.globalAlpha=1}
 const OL='#2a1d18';
-function limb(pts,w,col){cx.lineCap='round';cx.lineJoin='round';cx.beginPath();pts.forEach((p,i)=>i?cx.lineTo(p[0],p[1]):cx.moveTo(p[0],p[1]));cx.strokeStyle=OL;cx.lineWidth=w+3;cx.stroke();cx.strokeStyle=col;cx.lineWidth=w;cx.stroke()}
 function blob(fn,col,w){cx.beginPath();fn();cx.fillStyle=col;cx.fill();cx.strokeStyle=OL;cx.lineWidth=w||2.2;cx.lineJoin='round';cx.stroke()}
 function shade(fn,clipFn,col){cx.save();cx.beginPath();fn();cx.clip();cx.beginPath();clipFn();cx.fillStyle=col;cx.fill();cx.restore()}
-function drawPlayerDetails(x,y,scale,outfit,back){
- cx.save();
- cx.translate(x,y);cx.scale(scale,scale);
- if(outfit.id==='pearl'){
-  // A low braid and ribbon keep Pearl recognizable from either camera.
-  for(let i=0;i<3;i++){
-   blob(()=>cx.ellipse(-10-i*2,5+i*5,4-i*.5,5,-.4,0,7),outfit.hair,1.3);
-  }
-  blob(()=>cx.ellipse(-14,12,4,2,-.25,0,7),'#ed8ba7',1);
- }else if(outfit.id==='wave'){
-  // Round sea goggles wrap around the head.
-  cx.strokeStyle='#324b65';cx.lineWidth=2;
-  cx.beginPath();cx.moveTo(-11,-1);cx.lineTo(10,-1);cx.stroke();
-  if(!back){
-   blob(()=>cx.arc(7,0,4,0,7),'#c3e8ef',1.3);
-   cx.fillStyle='#324b65';cx.beginPath();cx.arc(8,0,1.3,0,7);cx.fill();
-  }
-  blob(()=>cx.roundRect(-12,-3,5,4,1),'#e2bb78',.9);
- }
- cx.restore();
+function drawCatRod(gripX,gripY,tipX,tipY,bend){
+ cx.lineCap='round';cx.beginPath();cx.moveTo(gripX-7,gripY+6);cx.lineTo(gripX,gripY);
+ cx.quadraticCurveTo(gripX+(tipX-gripX)*.56,tipY+bend,tipX,tipY);
+ cx.strokeStyle=OL;cx.lineWidth=4.4;cx.stroke();cx.strokeStyle='#a87650';cx.lineWidth=2.3;cx.stroke();
 }
-function drawPlayerHat(x,y,scale,outfit){
- cx.save();
- cx.translate(x,y);cx.scale(scale,scale);
- const trim=sh(outfit.hat,.28);
- if(outfit.id==='pearl'){
-  blob(()=>cx.ellipse(-7,-13,5,6,-.4,0,7),trim,1.4);
-  blob(()=>cx.ellipse(7,-13,5,6,.4,0,7),trim,1.4);
-  blob(()=>cx.ellipse(0,0,14,12,0,Math.PI,0),outfit.hat,1.6);
-  blob(()=>cx.roundRect(-13,-2,26,5,2),trim,1.3);
- }else if(outfit.id==='wave'){
-  blob(()=>cx.roundRect(-9,-12,18,13,3),outfit.hat,1.5);
-  blob(()=>cx.ellipse(0,0,17,3,0,0,7),trim,1.4);
-  cx.fillStyle=sh(outfit.hat,-.32);cx.fillRect(-8,-5,16,2);
- }else{
-  blob(()=>cx.ellipse(0,0,12,10,0,Math.PI,0),outfit.hat,1.6);
-  blob(()=>cx.ellipse(4,0,13,2.5,0,0,7),trim,1.4);
- }
- cx.restore();
-}
-function personShape(x,y,stand,outfit=character(),preview=false){const b=preview?0:Math.sin(t*2.2)*1.2+(stand?PA.crouch*8:0),bl=!preview&&(t%3.6)<.12,skin=outfit.skin,skinD=sh(skin,-.14),hair=outfit.hair,jk=outfit.jacket,jkD=sh(jk,-.18),tee='#f6f1e8',jean='#3c6590',jeanD='#2d4f74',boot='#6b4428';
-cx.fillStyle='#00000030';cx.beginPath();cx.ellipse(x+1,y,17,3.5,0,0,7);cx.fill();
-const u=y-40+b*.4;
-limb([[x-1,y-63+b],[x+3,y-51+b],[x+11,y-52+b]],5.5,jkD);
-limb([[x-1,u],[x-4,y-21+b*.2],[x-5,y-7]],7,jeanD);limb([[x+3,u],[x+6,y-21+b*.2],[x+6,y-7]],7.5,jean);
-blob(()=>cx.roundRect?cx.roundRect(x-11,y-8,12,8,4):cx.rect(x-11,y-8,12,8),boot,2);blob(()=>cx.roundRect?cx.roundRect(x+1,y-8,13,8,4):cx.rect(x+1,y-8,13,8),boot,2);
-cx.save();cx.translate(0,b);
-const tor=()=>{cx.moveTo(x-9,y-69);cx.quadraticCurveTo(x+1,y-75,x+11,y-69);cx.quadraticCurveTo(x+13,y-54,x+11,y-37);cx.lineTo(x-9,y-37);cx.quadraticCurveTo(x-11,y-54,x-9,y-69);cx.closePath()};
-blob(tor,jk);shade(tor,()=>cx.rect(x-12,y-76,8,40),jkD);
-cx.fillStyle=tee;cx.beginPath();cx.moveTo(x+5,y-70);cx.lineTo(x+11,y-69);cx.quadraticCurveTo(x+12,y-54,x+10,y-39);cx.lineTo(x+6,y-39);cx.closePath();cx.fill();
-cx.strokeStyle=OL;cx.lineWidth=1.4;cx.beginPath();cx.moveTo(x+5,y-70);cx.lineTo(x+6,y-39);cx.moveTo(x-8,y-43);cx.lineTo(x+10,y-43);cx.stroke();
-cx.fillStyle=skinD;cx.fillRect(x,y-78,5,8);
-const hx=x+2,hy=y-86;blob(()=>cx.ellipse(hx,hy,12*outfit.width,12,0,0,7),skin);
-blob(()=>cx.ellipse(hx-5,hy+1,2.6,3.4,0,0,7),skin,1.6);
-blob(()=>{cx.moveTo(hx-11,hy+3);cx.quadraticCurveTo(hx-14,hy-13,hx-1,hy-14);cx.quadraticCurveTo(hx+13,hy-15,hx+12,hy-4);cx.quadraticCurveTo(hx+7,hy-9,hx+1,hy-6);cx.quadraticCurveTo(hx-3,hy-4,hx-4,hy+2);cx.quadraticCurveTo(hx-7,hy-2,hx-11,hy+3);cx.closePath()},hair,1.8);
-// A soft fisherman’s cap keeps the player recognizable at small sizes.
-drawPlayerHat(hx,hy-8,1,outfit);
-cx.fillStyle='#2a1a10';cx.beginPath();cx.ellipse(hx+6.5,hy-.5,1.6,bl?.3:2.3,0,0,7);cx.fill();if(!bl){cx.fillStyle='#fff';cx.beginPath();cx.arc(hx+7,hy-1.4,.6,0,7);cx.fill()}
-cx.strokeStyle=hair;cx.lineWidth=1.4;cx.beginPath();cx.moveTo(hx+4,hy-5);cx.lineTo(hx+9,hy-5.6);cx.stroke();
-cx.fillStyle='#ff8fa360';cx.beginPath();cx.ellipse(hx+6,hy+4.5,2.6,1.5,0,0,7);cx.fill();
-cx.strokeStyle='#8a4a3a';cx.lineWidth=1.2;cx.beginPath();cx.arc(hx+7.5,hy+5,2,.3,1.6);cx.stroke();
-drawPlayerDetails(hx,hy,1,outfit,false);
-const sx=x+4,sy=y-65;
-if(!stand){let th=-.85+(preview?0:Math.sin(t*1.3)*.04);
-if(!preview&&mode==='wait'&&cast<1)th-=1.3*Math.sin(cast*Math.PI);else if(mode==='bite')th+=.16+Math.sin(t*30)*.06;
-const d0=th+.85,hx2=sx+14,hy2=sy+9-d0*6,dx=Math.cos(th),dy=Math.sin(th),L=86,bend=mode==='bite'?14:4,tx=hx2+dx*L,ty=hy2+dy*L;
-cx.lineCap='round';cx.strokeStyle=OL;cx.lineWidth=4.5;cx.beginPath();cx.moveTo(hx2-dx*10,hy2-dy*10);cx.quadraticCurveTo(hx2+dx*L*.6-dy*bend,hy2+dy*L*.6+dx*bend,tx,ty+bend*.3);cx.stroke();cx.strokeStyle='#6b4a2a';cx.lineWidth=2.4;cx.stroke();
-if(!preview)PT={x:tx,y:ty+bend*.3+b};
-limb([[sx,sy],[sx+6,sy+10],[hx2,hy2]],6,jk);blob(()=>cx.arc(hx2,hy2,3.6,0,7),skin,1.6)}
-else{const sw=PA.swing,ang=-1.15+sw*1.6,hx2=sx+12+sw*6,hy2=sy+6-sw*2,dx=Math.cos(ang),dy=Math.sin(ang);
-limb([[hx2-dx*14,hy2-dy*14],[hx2+dx*40,hy2+dy*40]],3.5,'#8a5a34');blob(()=>cx.ellipse(hx2+dx*46,hy2+dy*46,4.5,8,ang+Math.PI/2,0,7),'#a8763f',1.8);
-limb([[sx,sy],[sx+5,sy+10],[hx2,hy2]],6,jk);blob(()=>cx.arc(hx2,hy2,3.6,0,7),skin,1.6)}
-cx.restore()}
-function drawPerson(x,y,stand){personShape(x,y,stand)}
-function drawPet(x,y,c,sc){cx.save();cx.translate(x,y);cx.scale(sc,sc);if(c.hungry){cx.scale(1,.8)}drawCat(0,0,c,false);cx.restore()}
+function drawPet(x,y,c,sc){cx.save();cx.translate(x,y);cx.scale(sc,sc);if(c?.hungry){cx.scale(1,.8)}drawCat(0,0,c,false);cx.restore()}
 function drawCat(x,y,L,stand){catShape(x,y,L,stand)}
 
 function draw(){
@@ -727,9 +559,25 @@ const py=hz+(H-hz)*.2,bx=T?Math.max(90,W*.26):W*.5,by=(T?hz+(H-hz)*.24:hz+(H-hz)
 SP=[];if(!T)drawPort(bx,by,py);else drawSea(hz);
 const fight=mode==='fight';
 drawBoatBack(bx,by);if(T)drawCargo(bx,by);
-{const cs=crewCards();const spots=[[-46,.72],[52,.66],[-70,.6],[30,.55],[-22,.55],[66,.55]];PETPOS=[];cs.slice(0,6).forEach((c,i)=>{if(i<2||!T){drawPet(bx+spots[i][0],by-6,c,spots[i][1]);PETPOS.push({x:bx+spots[i][0],y:by-6-34*spots[i][1]*2,id:c.id})}});drawPerson(bx+8,by-6,fight)}
+const [captain,...mates]=crewCards();
+PETPOS=[];
+mates.forEach((cat,i)=>{
+ const x=bx+(i===0?-45:47),y=by-6;
+ drawPet(x,y,cat,.67);
+ PETPOS.push({x,y:y-43,id:cat.id});
+});
+const catX=bx+8+(fight?PA.swing*11:0),catY=by-6+(fight?PA.crouch*7:0);
+drawPet(catX,catY,captain,fight?1.05:1);
+if(captain)PETPOS.push({x:catX,y:catY-54,id:captain.id});
+const castLift=mode==='wait'?Math.sin(cast*Math.PI)*.85:0;
+const rodAngle=-.8-castLift+(mode==='bite'?Math.sin(t*27)*.09:0);
+const gripX=catX+19,gripY=catY-17;
+const tipx=gripX+Math.cos(rodAngle)*67,tipy=gripY+Math.sin(rodAngle)*67;
+if(!fight){
+ drawCatRod(gripX,gripY,tipx,tipy,mode==='bite'?12:4);
+ blob(()=>cx.ellipse(gripX,gripY,4.8,4,-.3,0,7),captain?TR[captain.a].c:'#e59a4a',1.3);
+}
 drawBoat(bx,by);
-const tipx=PT.x,tipy=PT.y;
 
 if(T&&!fight&&(mode==='idle'||mode==='wait'||mode==='bite')){const sx=W*.74,sy=hz+(H-hz)*.42+6;
 {const g=cx.createRadialGradient(sx,sy,0,sx,sy,70);g.addColorStop(0,'#bff4ff55');g.addColorStop(1,'#bff4ff00');cx.fillStyle=g;cx.beginPath();cx.ellipse(sx,sy,72,20,0,0,7);cx.fill()}
@@ -890,53 +738,6 @@ function crackView(){mbox.innerHTML=`<h2>ทุบอำพัน</h2><p class="
 function openCrack(){openedAt=performance.now();if(!S.amber){toast('ยังไม่มีอำพัน ออกเรือไปหามาก่อน');return}sheet='amber';hits=0;crackView();modal.classList.add('on')}
 function reveal(){sheet='reveal';S.amber--;const c=newCard(),dup=!!c.dup;delete c.dup;if(!dup){S.cards.push(c);if(crewCards().length<CREW)S.crew.push(c.id)}save();const ch=CH[c.a];
 mbox.innerHTML=`<p class="hint" style="margin:0">${dup?'เจอเพื่อนเก่า!':'เพื่อนใหม่!'}</p><h2>${ch.n}${c.rar===3?' ร่างทอง':''}</h2><p style="margin:0;color:#b8640f;font:500 15px Mitr">${dup?'★ เพิ่มเป็น '+c.lv+' ดาว · ค่าพลังเพิ่มขึ้น':ch.ttl}</p><div class="pop" style="max-width:200px;margin:0 auto;width:100%">${cardHTML(c)}</div><p style="margin:0;font:500 16px Mitr">“${pick(ch.lines)}”</p><p class="hint">${perkText(c)}</p>${S.amber?'<button class="main" id="mAgain">ทุบอีกก้อน ('+S.amber+')</button>':''}<button id="mClose">ปิด</button>`}
-function drawCharacterPreview(form){
- const canvas=$('#characterPreview'),context=canvas.getContext('2d');
- if(!context)return;
- const colors=Object.fromEntries(new FormData(form));
- const id=characterId(colors.playerChoice);
- const outfit={...characters[id],...colors,id};
- const gameContext=cx;
- cx=context;
- cx.save();
- try{
-  cx.clearRect(0,0,canvas.width,canvas.height);
-  cx.scale(2,2);
-  personShape(133,124,false,outfit,true);
- }finally{
-  cx.restore();
-  cx=gameContext;
- }
-}
-mbox.addEventListener('input',e=>{
- if(e.target.form?.matches('#characterForm')&&e.target.type==='color')drawCharacterPreview(e.target.form);
-});
-function applyCharacterColors(form,preset,keys){
- for(const key of keys)form.elements.namedItem(key).value=preset[key];
-}
-mbox.addEventListener('change',e=>{
- const form=e.target.form;
- if(!form?.matches('#characterForm'))return;
- if(e.target.name==='playerChoice'){
-  applyCharacterColors(form,characters[characterId(e.target.value)],Object.keys(characterFields));
-  form.elements.outfit.value='';
- }
- if(e.target.name==='outfit'&&e.target.value){
-  applyCharacterColors(form,characters[characterId(e.target.value)],['jacket','hat']);
- }
- saveCharacterSelection(form);
-});
-mbox.addEventListener('submit',e=>{
- if(!e.target.matches('#characterForm')||sheet!=='character')return;
- e.preventDefault();
- closeSheet();
-});
-function saveCharacterSelection(form){
- const {outfit,playerChoice,...colors}=Object.fromEntries(new FormData(form));
- S.character={...colors,id:characterId(playerChoice)};
- save();
- drawCharacterPreview(form);
-}
 mbox.addEventListener('click',e=>{if(performance.now()-openedAt<450)return;const tg=e.target;
 if(tg.closest('#amber')){hits++;if(hits>=5){reveal();return}crackView();$('#amber').classList.add('knock');return}
 if(tg.id==='mAgain'){openCrack();return}
