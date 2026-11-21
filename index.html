@@ -148,7 +148,7 @@ body[data-mode=idle] #questQuick{top:max(74px,calc(env(safe-area-inset-top) + 66
 @keyframes quest-slide{from{opacity:0;transform:translateX(10px)}}
 @media(prefers-reduced-motion:reduce){#questQuick{animation:none}}
 </style></head><body>
-<div class="game-version">Nekofish · เวอร์ชันทดลอง 45</div>
+<div class="game-version">Nekofish · เวอร์ชันทดลอง 46</div>
 <div class="fig" id="fig"><canvas id="cv"></canvas><div id="toast"></div></div>
 <span id="voyageCatch" hidden></span>
 <aside id="questQuick" aria-label="ภารกิจในหน้าเกม" hidden>
@@ -517,7 +517,7 @@ function makeReelRoute(type){
  return routeStops.filter(x=>type===undefined||(x-R.lx)*R.dir>.15).map(x=>{
   const roll=Math.random(),luck=1+(R.ST[2]-3)*.08;
   const kind=type||(R.midas>0||R.tr==='gold'&&roll<.35?'coin':practice?'n':roll<.07*luck?'heart':roll<.13*luck?'time':roll<.23*luck?'coin':'n');
-  return {x,r:Math.min(.8,practice?.75:radius)*(R.big>0?1.1:1),type:kind,fake:routeStops[fake]===x};
+  return {x,r:.86*Math.min(.8,practice?.75:radius)*(R.big>0?1.1:1),type:kind,fake:routeStops[fake]===x};
  });
 }
 const GR=['C','B','A','S','SS'],GC=['#9aa5ad','#5fb3c9','#5fd16a','#e8912e','#d6304e'],GM=[1,1.2,1.5,2,3];
@@ -591,7 +591,7 @@ else if(k==='bait'){
  for(const c of makeReelRoute('n'))if(!R.cs.some(active=>active.x===c.x))R.cs.push(c);
  R.combo+=3;
 }
-else if(k==='light'){R.big=6;for(const c of R.cs)c.r=Math.min(.88,c.r*1.25)}
+else if(k==='light'){R.big=6;for(const c of R.cs)c.r=Math.min(.80,c.r*1.25)}
 else if(k==='freeze'){R.freeze=3}
 else if(k==='midas'){R.midas=4;for(const c of R.cs)if(!c.fake)c.type='coin'}
 else if(k==='wave'){R.power=5;R.hearts=Math.min(R.maxH,R.hearts+1)}
@@ -656,7 +656,7 @@ function drawReelTargets(toX,toY){
  cx.stroke();cx.restore();
  const unit=toX(1)-toX(0);
  for(const target of R.cs){
-  const x=toX(target.x),y=toY(target.x),rx=target.r*unit,ry=Math.max(9,rx*.52);
+  const x=toX(target.x),y=toY(target.x),rx=target.r*unit,ry=Math.max(7,rx*.49);
   const ready=target===onC();
   const color=target.type==='heart'?'#ff9fac':target.type==='time'?'#a3dff5':target.type==='coin'?'#ffd382':target.type==='x2'?'#d7bcff':'#abf3d9';
   cx.save();
