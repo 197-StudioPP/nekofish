@@ -55,7 +55,7 @@ export function createSeaView() {
   let height = 0;
   let lastPalette;
   return {
-    draw(time, w, h, palette) {
+    draw(time, w, h, palette, fishing = 0) {
       if (renderer.getContext().isContextLost()) return null;
       if (w !== width || h !== height) {
         width = w;
@@ -71,6 +71,8 @@ export function createSeaView() {
         scene.background = uniforms.deep.value;
         lastPalette = palette;
       }
+      camera.position.set(-fishing * 4, 17 + fishing * 8, 25 - fishing * 3);
+      camera.lookAt(fishing * 3, 0, -12 + fishing * 2);
       uniforms.clock.value = time;
       renderer.render(scene, camera);
       return renderer.domElement;

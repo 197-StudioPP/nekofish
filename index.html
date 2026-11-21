@@ -148,7 +148,7 @@ body[data-mode=idle] #questQuick{top:max(74px,calc(env(safe-area-inset-top) + 66
 @keyframes quest-slide{from{opacity:0;transform:translateX(10px)}}
 @media(prefers-reduced-motion:reduce){#questQuick{animation:none}}
 </style></head><body>
-<div class="game-version">Nekofish · เวอร์ชันทดลอง 44</div>
+<div class="game-version">Nekofish · เวอร์ชันทดลอง 45</div>
 <div class="fig" id="fig"><canvas id="cv"></canvas><div id="toast"></div></div>
 <span id="voyageCatch" hidden></span>
 <aside id="questQuick" aria-label="ภารกิจในหน้าเกม" hidden>
@@ -924,7 +924,7 @@ function drawSeaFromDeck(zone){
  }
  if(sea3D){
   try{
-   const frame=sea3D.draw(t,W,H,SKY[zone-1]);
+   const frame=sea3D.draw(t,W,H,SKY[zone-1],fishingZoom);
    if(frame){cx.drawImage(frame,0,0,W,H);return}
   }catch{sea3D=null}
  }
@@ -942,10 +942,11 @@ function drawSeaFromDeck(zone){
 }
 function drawForegroundDeck(x,y,zoom){
  const half=cl(W*.235,90,225)*(1-.34*zoom),edge=y-24+7*zoom;
+ const rise=zoom*22;
  const flare=half*.24,rim=cl(half*.045,4,9);
  cx.fillStyle='#926052';
- cx.beginPath();cx.moveTo(x-half-flare,H+14);cx.lineTo(x-half*.82,edge+20);
- cx.quadraticCurveTo(x-half*.13,edge-14,x+half*.83,edge+9);
+ cx.beginPath();cx.moveTo(x-half-flare,H+14);cx.lineTo(x-half*.82,edge+20-rise);
+ cx.quadraticCurveTo(x-half*.13,edge-14,x+half*.83,edge+9+rise*.35);
  cx.lineTo(x+half+flare,H+14);cx.closePath();cx.fill();
  cx.save();cx.clip();
  const wood=cx.createLinearGradient(0,edge,0,H);
@@ -957,7 +958,7 @@ function drawForegroundDeck(x,y,zoom){
  }
  cx.restore();
  cx.strokeStyle='#8c5a4b';cx.lineWidth=rim;cx.lineCap='round';cx.beginPath();
- cx.moveTo(x-half*.82,edge+20);cx.quadraticCurveTo(x-half*.13,edge-14,x+half*.83,edge+9);cx.stroke();
+ cx.moveTo(x-half*.82,edge+20-rise);cx.quadraticCurveTo(x-half*.13,edge-14,x+half*.83,edge+9+rise*.35);cx.stroke();
  cx.strokeStyle='#f0c69a';cx.lineWidth=rim*.52;cx.stroke();
 }
 function drawDeckCat(x,y,cat,scale,pose={}){
@@ -1008,9 +1009,11 @@ const tug=reeling?linePull():{fish:0,counter:0};
 const z=T?Math.min(T.zone,5):1,hz=H*.42;
 cx.save();if(shake>0)cx.translate((Math.random()-.5)*14*shake,(Math.random()-.5)*14*shake);
 if(T)drawSeaFromDeck(z);else drawBG(z,hz);
-const py=hz+(H-hz)*.2+Math.min(22,H*.035),bx=T?Math.max(78,W*.31):W*.5;
+const py=hz+(H-hz)*.2+Math.min(22,H*.035),bx=T?Math.max(75,W*(.31-.07*fishingZoom)):W*.5;
 const by=(T?H*(.85+.047*fishingZoom):hz+(H-hz)*.62)+Math.sin(t*1.6)*2;
-const fishingX=W*.69,fishingY=H*.39;
+const wide=W/H>1.16;
+const fishingX=W*(.69-fishingZoom*(wide?.16:.10));
+const fishingY=Math.max(Math.min(122,H*.41),H*(.39-.085*fishingZoom));
 SP=[];
 if(!T)drawPort(bx,by,py);
 else if(mode==='idle'){
@@ -1034,7 +1037,7 @@ const pose=castCels[frame],kittenScale=.74;
 if(mode==='port'||mode==='idle'){
  for(let i=1;i<castCels.length;i++)captainCastSprite(captain,i);
 }
-const rodAngle=pose.angle+(mode==='bite'?Math.sin(t*27)*.09:0)+(reeling?tug.fish*.22-tug.counter*.49:landing?-ease(cl(LAND.t/.35,0,1))*.42:0);
+const rodAngle=pose.angle-.15*fishingZoom+(mode==='bite'?Math.sin(t*27)*.09:0)+(reeling?tug.fish*.22-tug.counter*.49:landing?-ease(cl(LAND.t/.35,0,1))*.42:0);
 const gripX=catX+pose.grip[0]*kittenScale+tug.fish*4-tug.counter*7,gripY=catY+pose.grip[1]*kittenScale-tug.counter*5;
 const rodLength=T?67-9*fishingZoom:67;
 const tipx=gripX+Math.cos(rodAngle)*rodLength,tipy=gripY+Math.sin(rodAngle)*rodLength;
@@ -1087,9 +1090,9 @@ if(mode==='idle'){fx=tipx+6;fy=by+4}
 else if(mode==='wait'){const flight=cl((progress-.34)/.66,0,1);fx=tipx+(fx-tipx)*flight;fy=tipy+(fy-tipy)*flight-Math.sin(flight*Math.PI)*53}
 else if(mode==='bite')fy+=7+Math.sin(t*34)*3;
 else if(reeling||landing){
- const toX=value=>fishingX+value*Math.min(W*.078,96);
+ const toX=value=>fishingX+value*Math.min(W*(.078+.034*fishingZoom),96+39*fishingZoom);
  const trackY=fy;
- const depth=Math.min(36,H*.057);
+ const depth=Math.min(42,H*(.057+.013*fishingZoom));
  const shape=(route,value)=>{
   const u=value/3.35;
   return Math.sin((u+1)*Math.PI/2)*route.arch+u*route.slope;
