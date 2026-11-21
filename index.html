@@ -148,7 +148,7 @@ body[data-mode=idle] #questQuick{top:max(74px,calc(env(safe-area-inset-top) + 66
 @keyframes quest-slide{from{opacity:0;transform:translateX(10px)}}
 @media(prefers-reduced-motion:reduce){#questQuick{animation:none}}
 </style></head><body>
-<div class="game-version">Nekofish · เวอร์ชันทดลอง 46</div>
+<div class="game-version">Nekofish · เวอร์ชันทดลอง 47</div>
 <div class="fig" id="fig"><canvas id="cv"></canvas><div id="toast"></div></div>
 <span id="voyageCatch" hidden></span>
 <aside id="questQuick" aria-label="ภารกิจในหน้าเกม" hidden>
@@ -656,20 +656,17 @@ function drawReelTargets(toX,toY){
  cx.stroke();cx.restore();
  const unit=toX(1)-toX(0);
  for(const target of R.cs){
-  const x=toX(target.x),y=toY(target.x),rx=target.r*unit,ry=Math.max(7,rx*.49);
+  const x=toX(target.x),y=toY(target.x);
+  const rx=cl(target.r*unit*.37,6.5,10),ry=rx*.66;
   const ready=target===onC();
-  const color=target.type==='heart'?'#ff9fac':target.type==='time'?'#a3dff5':target.type==='coin'?'#ffd382':target.type==='x2'?'#d7bcff':'#abf3d9';
+  const color=target.type==='heart'?'#ff9fac':target.type==='time'?'#a3dff5':target.type==='coin'?'#ffd382':'#abf3d9';
   cx.save();
-  cx.globalAlpha=target===route[0]||ready?1:.62;
-  if(target!==route[0]&&!ready)cx.globalAlpha=.62;
-  cx.fillStyle=ready?'#ffce7788':color+'38';
-  cx.beginPath();cx.ellipse(x,y,rx,ry,0,0,7);cx.fill();
-  cx.strokeStyle=ready?'#ffe5a0':color;cx.lineWidth=ready?4:2.5;
-  if(ready){cx.shadowColor='#ffe3a0';cx.shadowBlur=10}
-  cx.globalAlpha*=.52;
-  cx.beginPath();cx.ellipse(x,y,rx,ry,0,0,7);cx.stroke();
-  cx.globalAlpha=target===route[0]||ready?1:.62;
-  cx.beginPath();cx.ellipse(x,y,rx,ry,0,0,Math.PI*2);cx.stroke();
+  cx.globalAlpha=target===route[0]||ready?1:.68;
+  cx.fillStyle=ready?'#ffce7755':color+'20';
+  cx.strokeStyle=ready?'#ffe5a0':color;
+  cx.lineWidth=ready?2.6:1.6;
+  if(ready){cx.shadowColor='#ffe3a0';cx.shadowBlur=5}
+  cx.beginPath();cx.ellipse(x,y,rx,ry,0,0,Math.PI*2);cx.fill();cx.stroke();
   const label=({heart:'♥',time:'+4s',coin:'✦'}[target.type])||(target===route[0]&&!ready?'ถัดไป':'');
   if(label){
    cx.fillStyle=color;cx.font='500 12px Mitr,sans-serif';cx.textAlign='center';cx.fillText(label,x,y-ry-5);
