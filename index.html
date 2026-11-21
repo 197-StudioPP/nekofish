@@ -90,14 +90,29 @@ body{overflow:hidden;overscroll-behavior:none}
 .inventory-slot svg{width:min(100%,56px);height:31px}
 .inventory-slot.empty{opacity:.45;border-style:dashed}
 @media(max-height:520px){.mbox:has(.inventory-tabs){padding:10px;gap:5px}.inventory-slot{min-height:65px}.inventory-slot svg{height:22px}}
-.tank{height:clamp(72px,21dvh,164px);position:relative;overflow:hidden;border-radius:16px;background:linear-gradient(#9bd8cb,#438e99);color:#183c48}
+body[data-mode=reel] .game-version{display:none}
+.inventory-layout{display:grid;grid-template-columns:1fr;gap:8px}
+.inventory-preview{display:flex;align-items:center;justify-content:center;gap:8px;padding:5px 8px;border-radius:14px;background:linear-gradient(145deg,#daf1e5,#a6d8d2);color:#244753;font-size:13px}
+.inventory-preview svg{width:54px;height:30px}
+.inventory-slot[aria-pressed=true]{border-color:#b47a42;box-shadow:inset 0 0 0 2px #f4bf74}
+@media(min-width:640px){
+ .inventory-layout{grid-template-columns:1fr 2fr}
+ .inventory-preview{display:grid;align-content:center;justify-items:center}
+ .inventory-preview svg{width:70px;height:45px}
+}
+.mbox:has(.tank){max-width:690px}
+.tank{height:clamp(120px,42dvh,330px);position:relative;isolation:isolate;overflow:hidden;border-radius:19px;border:1px solid #c1e7d6;background:radial-gradient(ellipse at 16% 0,#c0f3d866,transparent 51%),linear-gradient(#9bd8cb,#438e99 73%,#397b8d);color:#183c48;box-shadow:inset 0 0 28px #21617370}
+.tank::before{content:"";position:absolute;inset:80% -8px -6px;z-index:-1;background:radial-gradient(ellipse at 48% 85%,#eed5a0,#b19f72);border-radius:54% 61% 0 0}
 .tank-fish{position:absolute;left:var(--left);top:var(--top);animation:tank-drift 3.8s ease-in-out infinite alternate;animation-delay:var(--delay)}
-.tank-fish svg{width:55px;height:33px}
+.tank-fish svg{width:clamp(45px,12vw,74px);height:40px}
 .tank-fed .tank-fish{animation-duration:.6s}
+.tank-tools{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.tank-tools button,.tank-tools select{min-height:40px;padding:4px 8px;border-radius:11px;font-size:13px}
 @keyframes tank-drift{to{transform:translate(17px,-6px)}}
+@media(max-height:480px){.tank{height:30dvh;min-height:85px}}
 @media(prefers-reduced-motion:reduce){.tank-fish{animation:none}}
 </style></head><body>
-<div class="game-version">Nekofish · เวอร์ชันทดลอง 28</div>
+<div class="game-version">Nekofish · เวอร์ชันทดลอง 29</div>
 <div class="fig" id="fig"><canvas id="cv"></canvas><div id="toast"></div></div>
 <span id="voyageCatch" hidden></span>
 <div id="modal"><div class="mbox" id="mbox"></div></div>
@@ -199,14 +214,14 @@ function updateVoyageHud(){
 function openVoyageBag(cat){
  if(!T||mode!=='idle'||modal.classList.contains('on'))return;
  feedCatId=cat?.id||null;
- inventoryTab=cat&&!T.fish.length?'box':'catch';inventoryPage=0;
+ inventoryTab=cat&&!T.fish.length?'box':'catch';inventoryPage=0;inventorySelection=null;
  openSheet('voyage-feed');
 }
-function setMode(m){mode=m;updateVoyageHud();if(m==='port'&&sheet)renderSheet()}
+function setMode(m){mode=m;document.body.dataset.mode=m;updateVoyageHud();if(m==='port'&&sheet)renderSheet()}
 const CREW=3;
 const rodCost=()=>40*S.rod*S.rod,boatCost=()=>70*S.boat*S.boat;
 const perksHTML=()=>{const ac=activeCombos().map(c=>c[2]);return '<div><b>คู่หู</b> พาแมวคู่นี้ขึ้นเรือด้วยกันได้โบนัส</div>'+COMBO.map(([a,b,n,d])=>`<div style="${ac.includes(n)?'color:#3aa35a;font-weight:600':'opacity:.7'}">${ac.includes(n)?'✓ ':''}${CH[a].n} + ${CH[b].n} · ${n}: ${d}</div>`).join('')+'<div style="margin-top:6px">แมวบนเรือที่<b>อิ่ม</b>เท่านั้นที่ช่วยและนับคู่หู</div>'};
-let inventoryTab='catch',inventoryPage=0,feedCatId=null;
+let inventoryTab='catch',inventoryPage=0,inventorySelection=null,feedCatId=null;
 const boatRoles={
  fishing:{label:'เรือตกปลา',desc:'วงดึงปลาใหญ่ขึ้น',cost:55},
  escort:{label:'เรือคุ้มครอง',desc:'ลดเสบียงที่เสียเมื่อเจอพายุ',cost:45},
@@ -226,12 +241,14 @@ function renderVoyageInventory(){
   const count=Math.max(1,Math.ceil(list.length/pageSize));
   inventoryPage=cl(inventoryPage,0,count-1);
   const fish=list.slice(inventoryPage*pageSize,(inventoryPage+1)*pageSize);
+  const selected=fish.find(f=>f===inventorySelection)||fish[0];
+  const preview=cat?catSVG(cat)+'<b>'+CH[cat.a].n+'</b>':selected?fishSVG(fishArtColor(selected))+'<b>'+selected.n+'</b><span>'+selected.cm+' ซม.</span>':'<b>ช่องว่าง</b>';
   const slots=Array.from({length:pageSize},(_,i)=>{
    const f=fish[i];
    const details=f?`${fishSVG(fishArtColor(f))}<b>${f.n}</b><span>เกรด ${GR[f.g]} · ${f.cm} ซม.</span>`:'';
-   return f?(cat?`<button type="button" class="inventory-slot" data-feed-slot="${inventoryPage*pageSize+i}">${details}</button>`:`<div class="inventory-slot">${details}</div>`):'<div class="inventory-slot empty" aria-hidden="true">—</div>';
+   return f?(cat?`<button type="button" class="inventory-slot" data-feed-slot="${inventoryPage*pageSize+i}">${details}</button>`:`<button type="button" class="inventory-slot" data-inspect-fish="${inventoryPage*pageSize+i}" aria-pressed="${f===selected}">${details}</button>`):'<div class="inventory-slot empty" aria-hidden="true">—</div>';
   });
-  contents=`<div class="inventory-grid">${slots.join('')}</div>`;
+  contents=`<div class="inventory-layout"><aside class="inventory-preview">${preview}</aside><div class="inventory-grid">${slots.join('')}</div></div>`;
   if(!list.length)contents+='<p class="hint">ช่องยังว่าง</p>';
   if(count>1)contents+=`<div class="inventory-pages"><button type="button" data-inventory-page="-1" ${inventoryPage===0?'disabled':''}>ก่อนหน้า</button><span>${inventoryPage+1}/${count}</span><button type="button" data-inventory-page="1" ${inventoryPage===count-1?'disabled':''}>ถัดไป</button></div>`;
  }
@@ -255,7 +272,7 @@ function renderAquarium(){
  const milestone=[2,4,8].find(n=>n>claimed&&n<=species);
  const fish=`<select id="tankChoice" aria-label="เลือกปลาจากหีบ" style="max-width:62%">${S.box.map((f,i)=>`<option value="${i}">${f.n} · ${f.cm} ซม.</option>`).join('')}</select>`;
  mbox.innerHTML=`<h2>ตู้ปลา</h2><div class="tank" id="tankView">${S.tank.map((f,i)=>`<span class="tank-fish" style="--left:${9+i%3*28}%;--top:${12+Math.floor(i/3)*42}%;--delay:${-i*.45}s">${fishSVG(fishArtColor(f))}</span>`).join('')||'<p>ตู้ยังว่าง</p>'}</div>
- <div class="inventory-tabs">${S.box.length&&S.tank.length<6?fish+'<button id="tankAdd">ย้ายเข้าตู้</button>':''}
+ <div class="tank-tools">${S.box.length&&S.tank.length<6?fish+'<button id="tankAdd">ย้ายเข้าตู้</button>':''}
  ${S.tank.length?'<button id="tankReturn" '+(S.box.length>=BOXCAP?'disabled':'')+'>คืนตัวล่าสุด</button><button id="tankPlay">เรียกปลา</button><button id="tankFeed" '+(S.box.length?'':'disabled')+'>ให้อาหาร 1 ตัว</button>':''}</div>
  <p class="hint">สมุดปลา ${species}/${FISH.length} ชนิด · ตู้ ${S.tank.length}/6 ตัว</p>
  ${milestone?`<button id="collectionPrize" data-milestone="${milestone}">รับรางวัลสมุดปลา +${milestone*10} เหรียญ</button>`:''}
@@ -539,12 +556,26 @@ function drawReelPrompt(x,y){
  cx.fillText(text,x,top+20,w-12);
 }
 function drawReelStatus(){
- const width=Math.min(W-32,340),left=(W-width)/2;
- cx.fillStyle='#254956';rr(left,14,width,54,16);
- cx.fillStyle='#4b6c70';rr(left+12,49,width-24,8,4);
- if(R.hp>0){cx.fillStyle='#8ed6bb';rr(left+12,49,(width-24)*R.hp/R.max,8,4)}
- cx.textAlign='center';cx.font='500 14px Mitr,sans-serif';cx.fillStyle='#fff4db';
- cx.fillText(item.n+'  ·  '+Math.ceil(R.time)+' วิ  ·  '+'♥'.repeat(Math.max(0,R.hearts)),W/2,36,width-20);
+ const width=Math.min(W-20,550),left=(W-width)/2,mid=W/2,top=12;
+ const side=(width-61)/2;
+ cx.fillStyle='#203c53ed';rr(left,top,side,45,13);rr(mid+30,top,side,45,13);
+ cx.textAlign='center';cx.font='500 12px Mitr,sans-serif';cx.fillStyle='#fff5df';
+ cx.fillText('♥'.repeat(Math.max(0,R.hearts))+'♡'.repeat(Math.max(0,R.maxH-R.hearts)),left+side/2,top+17,side-12);
+ cx.fillText(item.n,mid+30+side/2,top+17,side-12);
+ const bars=[
+  [left+7,cl(R.hearts/R.maxH,0,1),'#f4a8b3'],
+  [mid+37,cl(R.hp/R.max,0,1),'#8dd9cb']
+ ];
+ for(const [x,progress,color] of bars){
+  cx.fillStyle='#537080';rr(x,top+27,side-14,8,4);
+  if(progress>0){cx.fillStyle=color;rr(x,top+27,(side-14)*progress,8,4)}
+ }
+ const timerY=top+23;
+ cx.fillStyle='#203c53';cx.beginPath();cx.arc(mid,timerY,25,0,7);cx.fill();
+ cx.strokeStyle=R.time<5?'#f4a8b3':'#f6cb80';cx.lineWidth=3;
+ cx.beginPath();cx.arc(mid,timerY,20,-Math.PI/2,-Math.PI/2+Math.PI*2*cl(R.time/R.tm,0,1));cx.stroke();
+ cx.fillStyle='#fff5df';cx.font='600 17px Mitr,sans-serif';
+ cx.fillText(Math.ceil(R.time),mid,timerY+6);
  if(R.rush>0){
   const p=cl(R.rush/1.8,0,1),w=Math.min(W-36,210);
   const jump=1+Math.sin(Math.PI*cl((1.8-R.rush)/.24,0,1))*.23;
@@ -1096,6 +1127,11 @@ if(tg.id==='reset'){if(!resetArm){resetArm=true;tg.textContent='แตะอี�
 try{localStorage.removeItem('nekofish1')}catch(err){}S={coins:0,rod:1,boat:1,amber:1,cards:[],crew:[],best:1,t:Date.now(),box:[],book:{}};resetArm=false;closeSheet();setMode('port');return}
 if(sheet==='voyage-feed'){
  const tab=tg.closest('[data-inventory-tab]'),page=tg.closest('[data-inventory-page]');
+ const inspect=tg.closest('[data-inspect-fish]');
+ if(inspect){
+  inventorySelection=(inventoryTab==='catch'?T.fish:S.box)[Number(inspect.dataset.inspectFish)];
+  renderSheet();return;
+ }
  if(tab){inventoryTab=tab.dataset.inventoryTab;inventoryPage=0;renderSheet();return}
  if(page){inventoryPage+=Number(page.dataset.inventoryPage);renderSheet();return}
 }
