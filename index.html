@@ -75,12 +75,23 @@ button.wait{position:relative;overflow:hidden;opacity:1;background:#d9cbb2;box-s
 .foot button{font-size:14px;min-height:44px}
 .game-version{position:fixed;right:max(10px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));z-index:2;pointer-events:none;padding:3px 8px;border-radius:12px;background:#142b38e6;color:#fff;font:12px/1.4 Sarabun,system-ui,sans-serif}
 #createCharacter{position:fixed;top:max(8px,env(safe-area-inset-top));right:10px;z-index:3;font-size:14px}
-#characterForm{display:grid;gap:12px}
-#characterForm label{display:flex;justify-content:space-between;align-items:center;gap:12px;text-align:left}
-#characterForm input[type=color]{width:64px;height:44px}
+body{overflow:hidden;overscroll-behavior:none}
+.mbox:has(#characterForm){overflow:visible;max-height:none;padding:10px;gap:6px}
+#characterForm{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+#characterForm label{display:grid;gap:2px;font-size:13px;text-align:left}
+#characterForm select{height:38px;width:100%;font:inherit}
+#characterPreview{display:block;width:min(100%,240px,34dvh);height:auto;margin:auto;border:1px solid var(--line);border-radius:16px;background:linear-gradient(#fff0d8 45%,#b8e6de 46%,#79c6c5)}
+.character-colors,.character-actions{grid-column:1/-1;display:flex;justify-content:space-between;gap:4px}
+#characterForm input[type=color]{width:100%;min-width:35px;height:40px}
+.character-actions button{flex:1;padding:4px;min-height:40px;font-size:13px}
+@media(max-height:540px){
+ .mbox:has(#characterForm){grid-template-columns:minmax(72px,1fr) minmax(210px,2fr);align-items:center}
+ .mbox:has(#characterForm) h2{grid-column:1/-1}
+ #characterForm{grid-column:2}
+}
 </style></head><body>
-<button id="createCharacter" type="button">สร้างตัวละคร</button>
-<div class="game-version">Nekofish · เวอร์ชันทดลอง 2</div>
+<button id="createCharacter" type="button">เลือกตัวละคร</button>
+<div class="game-version">Nekofish · เวอร์ชันทดลอง 3</div>
 <div class="fig" id="fig"><canvas id="cv"></canvas><div id="toast"></div></div>
 <div id="modal"><div class="mbox" id="mbox"></div></div>
 <script>
@@ -172,11 +183,20 @@ let LAND=null,mode='port',T=null,R=null,F=null,item=null,waitT=0,biteT=0,holding
 function toast(m,ms=1800){const el=$('#toast');el.style.top=(mode==='reel'||mode==='fight'||mode==='land')?'128px':'52px';el.textContent=m;el.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('on'),ms)}
 
 let sheet=null;
-const characterDefaults={skin:'#f8d6b6',hair:'#49322e',jacket:'#ffce62',hat:'#76cbbf'};
-const character=()=>Object.fromEntries(Object.entries(characterDefaults).map(([key,color])=>{
- const value=S.character?.[key];
- return [key,typeof value==='string'&&/^#[0-9a-f]{6}$/i.test(value)?value:color];
-}));
+const characters={
+ captain:{name:'กัปตันโมจิ',skin:'#f8d6b6',hair:'#49322e',jacket:'#ffce62',hat:'#76cbbf',width:1},
+ pearl:{name:'นักตกปลามุก',skin:'#bd805e',hair:'#322738',jacket:'#a795dc',hat:'#faabb4',width:1.12},
+ wave:{name:'นักสำรวจคราม',skin:'#e2ac82',hair:'#75492c',jacket:'#72b6e4',hat:'#f3a769',width:.9}
+};
+const characterId=id=>Object.hasOwn(characters,id)?id:'captain';
+const character=()=>{
+ const id=characterId(S.character?.id),preset=characters[id];
+ const colors=Object.keys(characterFields).map(key=>{
+  const value=S.character?.[key];
+  return [key,typeof value==='string'&&/^#[0-9a-f]{6}$/i.test(value)?value:preset[key]];
+ });
+ return {...preset,...Object.fromEntries(colors),id};
+};
 const characterFields={skin:'สีผิว',hair:'สีผม',jacket:'สีเสื้อกันฝน',hat:'สีหมวก'};
 const createCharacter=$('#createCharacter');
 createCharacter.addEventListener('click',()=>openSheet('character'));
@@ -191,10 +211,13 @@ const perksHTML=()=>{const ac=activeCombos().map(c=>c[2]);return '<div><b>คู
 function renderSheet(){
 if(sheet==='character'){
  const colors=character();
- mbox.innerHTML=`<h2>สร้างตัวละคร</h2><form id="characterForm">
- ${Object.entries(characterFields).map(([key,label])=>`<label>${label}<input type="color" name="${key}" value="${colors[key]}"></label>`).join('')}
- <button class="main">บันทึกตัวละคร</button><button type="button" id="mClose">ยกเลิก</button>
+ mbox.innerHTML=`<h2>เลือกตัวละคร</h2><canvas id="characterPreview" width="560" height="280" role="img" aria-label="ตัวอย่างตัวละครที่เลือก"></canvas><form id="characterForm">
+ <label>ตัวละครที่จะเล่น <select name="id">${Object.entries(characters).map(([id,preset])=>`<option value="${id}" ${id===colors.id?'selected':''}>${preset.name}</option>`).join('')}</select></label>
+ <label>ชุดสำเร็จรูป <select name="outfit"><option value="">เลือกชุด</option><option value="captain">กันฝนสีเหลือง</option><option value="pearl">ชุดสีม่วง</option><option value="wave">ชุดสีฟ้า</option></select></label>
+ <div class="character-colors">${Object.entries(characterFields).map(([key,label])=>`<label>${label}<input type="color" name="${key}" value="${colors[key]}"></label>`).join('')}</div>
+ <div class="character-actions"><button type="button" data-reset-look>รีลุค</button><button class="main">เล่นตัวนี้</button><button type="button" id="mClose">ยกเลิก</button></div>
  </form>`;
+ drawCharacterPreview($('#characterForm'));
  return;
 }
 if(sheet==='box'||sheet==='shop'){const shop=sheet==='shop',got=FISH.filter(f=>S.book[f[0]]).length,sel=S.box.filter(f=>f.sell),selv=sel.reduce((a,f)=>a+priceOf(f),0);
@@ -330,7 +353,11 @@ for(const p of R.pops){const x=PX(p.x,p.z),y=PY(p.z),q=1-p.t/.45,k=F/p.z*.62/60*
 if(R.paw>0){const c1=lead()?TR[lead().a].c:'#e59a4a',x=PX(R.px,R.pz),y=PY(R.pz)-40+(.3-R.paw)*90;cx.globalAlpha=Math.min(1,R.paw/.15);cx.fillStyle=c1;cx.strokeStyle=sh(c1,-.45);cx.lineWidth=2;cx.beginPath();cx.ellipse(x,y,13,11,0,0,7);cx.fill();cx.stroke();for(let i=0;i<4;i++){cx.beginPath();cx.arc(x-12+i*8,y-13-(i%3?4:0),5,0,7);cx.fill();cx.stroke()}cx.globalAlpha=1}
 // deck (bow)
 const dy=H*.8;cx.fillStyle='#6b3f22';cx.beginPath();cx.moveTo(-20,H+10);cx.lineTo(W*.18,dy);cx.quadraticCurveTo(W/2,dy-26,W*.82,dy);cx.lineTo(W+20,H+10);cx.fill();
-cx.fillStyle='#8a5a34';cx.beginPath();cx.moveTo(-20,H+10);cx.lineTo(W*.2,dy+8);cx.quadraticCurveTo(W/2,dy-16,W*.8,dy+8);cx.lineTo(W+20,H+10);cx.fill();
+const deckLight=cx.createLinearGradient(0,dy-18,0,H);
+deckLight.addColorStop(0,'#c89160');
+deckLight.addColorStop(.5,'#aa714c');
+deckLight.addColorStop(1,'#81533c');
+cx.fillStyle=deckLight;cx.beginPath();cx.moveTo(-20,H+10);cx.lineTo(W*.2,dy+8);cx.quadraticCurveTo(W/2,dy-16,W*.8,dy+8);cx.lineTo(W+20,H+10);cx.fill();
 cx.strokeStyle='#00000025';cx.lineWidth=1.5;for(let i=-4;i<=4;i++){cx.beginPath();cx.moveTo(W/2+i*W*.05,dy-8);cx.lineTo(W/2+i*W*.16,H+10);cx.stroke()}
 cx.strokeStyle='#c9cfd4';cx.lineWidth=4;cx.beginPath();cx.moveTo(-20,H*.86);cx.lineTo(W*.18,dy-28);cx.quadraticCurveTo(W/2,dy-56,W*.82,dy-28);cx.lineTo(W+20,H*.86);cx.stroke();
 cx.lineWidth=3;const railY=x=>{const f=x/W;if(f<.18)return H*.86+(dy-28-H*.86)*((x+20)/(W*.18+20));if(f>.82)return dy-28+(H*.86-(dy-28))*((x-W*.82)/(W*.18+20));const u=(f-.18)/.64;return dy-28-2*u*(1-u)*28};for(const fr of[.06,.18,.34,.66,.82,.94]){const x=W*fr,yb=railY(x);cx.beginPath();cx.moveTo(x,yb);cx.lineTo(x,yb+26);cx.stroke()}
@@ -378,8 +405,10 @@ const jacket=()=>{
  cx.bezierCurveTo(cxp+29,cyp-62,cxp+28,cyp-98,cxp+16,cyp-103);
  cx.closePath();
 };
-limb([[cxp-19,cyp-91],[cxp-31,cyp-65],[cxp-23,cyp-52]],13,jacketShade);
-blob(()=>cx.ellipse(cxp-23,cyp-50,5.8,6.5,0,0,7),outfit.skin,1.7);
+const leftHand=cheer?[cxp-39,cyp-126+Math.sin(t*8)*3]:[cxp-23,cyp-50];
+const leftElbow=cheer?[cxp-36,cyp-102]:[cxp-31,cyp-65];
+limb([[cxp-19,cyp-91],leftElbow,leftHand],13,jacketShade);
+blob(()=>cx.ellipse(...leftHand,5.8,6.5,0,0,7),outfit.skin,1.7);
 blob(jacket,outfit.jacket,2.4);
 shade(jacket,()=>cx.ellipse(cxp+26,cyp-59,15,38,.12,0,7),jacketShade);
 blob(()=>cx.ellipse(cxp,cyp-94,17,10,0,0,7),jacketShade,1.8);
@@ -391,12 +420,9 @@ cx.strokeStyle=OL;cx.lineWidth=6;cx.stroke();cx.strokeStyle='#946444';cx.lineWid
 limb([[cxp+19,cyp-91],[cxp+30,cyp-69],[gripX,gripY]],13,outfit.jacket);
 blob(()=>cx.ellipse(gripX,gripY,6,7,-.35,0,7),outfit.skin,1.8);
 const hd=cyp-120;
-blob(()=>cx.ellipse(cxp,hd,21,20,0,0,7),outfit.hair,2.1);
+blob(()=>cx.ellipse(cxp,hd,21*outfit.width,20,0,0,7),outfit.hair,2.1);
 for(const side of [-1,1])blob(()=>cx.ellipse(cxp+side*19,hd+5,4.5,5.5,0,0,7),outfit.skin,1.6);
-blob(()=>cx.ellipse(cxp,hd-9,23,17,0,Math.PI,0),outfit.hat,2);
-blob(()=>cx.ellipse(cxp,hd-9,25,5,0,0,7),sh(outfit.hat,.24),1.8);
-cx.fillStyle='#fff2c4';cx.beginPath();cx.arc(cxp,hd-16,2.7,0,7);cx.fill();
-if(cheer){cx.strokeStyle=outfit.jacket;cx.lineWidth=12;cx.lineCap='round';cx.beginPath();cx.moveTo(cxp-24,cyp-94);cx.lineTo(cxp-40,cyp-140+Math.sin(t*10)*6);cx.stroke();cx.fillStyle=outfit.skin;cx.beginPath();cx.arc(cxp-41,cyp-146+Math.sin(t*10)*6,6,0,7);cx.fill()}
+drawPlayerHat(cxp,hd-9,1.9,outfit);
 cx.restore();
 
 
@@ -463,7 +489,7 @@ if(L){L.lives--;if(L.lives<=0){L.ret=1;S.crew=S.crew.filter(id=>id!==L.id);toast
 save();setMode('idle')}
 function act(a){({sail,cast:doCast,far,home:()=>goHome(),hook,hold:strike,hit,dodge,amber:openCrack,box:()=>openSheet('box'),shop:()=>openSheet('shop'),cards:()=>openSheet('cards'),rod:()=>openSheet('rod'),boat:()=>openSheet('boat')})[a]?.()}
 
-const cv=$('#cv'),cx=cv.getContext('2d'),fig=$('#fig');let W=0,H=0;
+const cv=$('#cv'),fig=$('#fig');let cx=cv.getContext('2d'),W=0,H=0;
 const fit=()=>{const r=fig.getBoundingClientRect(),d=Math.min(2,devicePixelRatio||1);W=r.width;H=r.height;cv.width=W*d;cv.height=H*d;cx.setTransform(d,0,0,d,0,0)};
 const figRO=new ResizeObserver(fit);figRO.observe(fig);
 const ZP=[
@@ -536,7 +562,26 @@ const OL='#2a1d18';
 function limb(pts,w,col){cx.lineCap='round';cx.lineJoin='round';cx.beginPath();pts.forEach((p,i)=>i?cx.lineTo(p[0],p[1]):cx.moveTo(p[0],p[1]));cx.strokeStyle=OL;cx.lineWidth=w+3;cx.stroke();cx.strokeStyle=col;cx.lineWidth=w;cx.stroke()}
 function blob(fn,col,w){cx.beginPath();fn();cx.fillStyle=col;cx.fill();cx.strokeStyle=OL;cx.lineWidth=w||2.2;cx.lineJoin='round';cx.stroke()}
 function shade(fn,clipFn,col){cx.save();cx.beginPath();fn();cx.clip();cx.beginPath();clipFn();cx.fillStyle=col;cx.fill();cx.restore()}
-function personShape(x,y,stand){const outfit=character();const b=Math.sin(t*2.2)*1.2+(stand?PA.crouch*8:0),bl=(t%3.6)<.12,skin=outfit.skin,skinD=sh(skin,-.14),hair=outfit.hair,jk=outfit.jacket,jkD=sh(jk,-.18),tee='#f6f1e8',jean='#3c6590',jeanD='#2d4f74',boot='#6b4428';
+function drawPlayerHat(x,y,scale,outfit){
+ cx.save();
+ cx.translate(x,y);cx.scale(scale,scale);
+ const trim=sh(outfit.hat,.28);
+ if(outfit.id==='pearl'){
+  blob(()=>cx.ellipse(-7,-13,5,6,-.4,0,7),trim,1.4);
+  blob(()=>cx.ellipse(7,-13,5,6,.4,0,7),trim,1.4);
+  blob(()=>cx.ellipse(0,0,14,12,0,Math.PI,0),outfit.hat,1.6);
+  blob(()=>cx.roundRect(-13,-2,26,5,2),trim,1.3);
+ }else if(outfit.id==='wave'){
+  blob(()=>cx.roundRect(-9,-12,18,13,3),outfit.hat,1.5);
+  blob(()=>cx.ellipse(0,0,17,3,0,0,7),trim,1.4);
+  cx.fillStyle=sh(outfit.hat,-.32);cx.fillRect(-8,-5,16,2);
+ }else{
+  blob(()=>cx.ellipse(0,0,12,10,0,Math.PI,0),outfit.hat,1.6);
+  blob(()=>cx.ellipse(4,0,13,2.5,0,0,7),trim,1.4);
+ }
+ cx.restore();
+}
+function personShape(x,y,stand,outfit=character(),preview=false){const b=preview?0:Math.sin(t*2.2)*1.2+(stand?PA.crouch*8:0),bl=!preview&&(t%3.6)<.12,skin=outfit.skin,skinD=sh(skin,-.14),hair=outfit.hair,jk=outfit.jacket,jkD=sh(jk,-.18),tee='#f6f1e8',jean='#3c6590',jeanD='#2d4f74',boot='#6b4428';
 cx.fillStyle='#00000030';cx.beginPath();cx.ellipse(x+1,y,17,3.5,0,0,7);cx.fill();
 const u=y-40+b*.4;
 limb([[x-1,y-63+b],[x+3,y-51+b],[x+11,y-52+b]],5.5,jkD);
@@ -548,23 +593,21 @@ blob(tor,jk);shade(tor,()=>cx.rect(x-12,y-76,8,40),jkD);
 cx.fillStyle=tee;cx.beginPath();cx.moveTo(x+5,y-70);cx.lineTo(x+11,y-69);cx.quadraticCurveTo(x+12,y-54,x+10,y-39);cx.lineTo(x+6,y-39);cx.closePath();cx.fill();
 cx.strokeStyle=OL;cx.lineWidth=1.4;cx.beginPath();cx.moveTo(x+5,y-70);cx.lineTo(x+6,y-39);cx.moveTo(x-8,y-43);cx.lineTo(x+10,y-43);cx.stroke();
 cx.fillStyle=skinD;cx.fillRect(x,y-78,5,8);
-const hx=x+2,hy=y-86;blob(()=>cx.ellipse(hx,hy,12,12,0,0,7),skin);
+const hx=x+2,hy=y-86;blob(()=>cx.ellipse(hx,hy,12*outfit.width,12,0,0,7),skin);
 blob(()=>cx.ellipse(hx-5,hy+1,2.6,3.4,0,0,7),skin,1.6);
 blob(()=>{cx.moveTo(hx-11,hy+3);cx.quadraticCurveTo(hx-14,hy-13,hx-1,hy-14);cx.quadraticCurveTo(hx+13,hy-15,hx+12,hy-4);cx.quadraticCurveTo(hx+7,hy-9,hx+1,hy-6);cx.quadraticCurveTo(hx-3,hy-4,hx-4,hy+2);cx.quadraticCurveTo(hx-7,hy-2,hx-11,hy+3);cx.closePath()},hair,1.8);
 // A soft fisherman’s cap keeps the player recognizable at small sizes.
-blob(()=>{cx.moveTo(hx-12,hy-7);cx.bezierCurveTo(hx-12,hy-24,hx+9,hy-25,hx+11,hy-8);cx.closePath()},outfit.hat,1.8);
-blob(()=>cx.ellipse(hx+4,hy-8,12,2.7,-.08,0,7),sh(outfit.hat,.24),1.5);
-cx.fillStyle='#fff2c4';cx.beginPath();cx.arc(hx+2,hy-14,2.4,0,7);cx.fill();
+drawPlayerHat(hx,hy-8,1,outfit);
 cx.fillStyle='#2a1a10';cx.beginPath();cx.ellipse(hx+6.5,hy-.5,1.6,bl?.3:2.3,0,0,7);cx.fill();if(!bl){cx.fillStyle='#fff';cx.beginPath();cx.arc(hx+7,hy-1.4,.6,0,7);cx.fill()}
 cx.strokeStyle=hair;cx.lineWidth=1.4;cx.beginPath();cx.moveTo(hx+4,hy-5);cx.lineTo(hx+9,hy-5.6);cx.stroke();
 cx.fillStyle='#ff8fa360';cx.beginPath();cx.ellipse(hx+6,hy+4.5,2.6,1.5,0,0,7);cx.fill();
 cx.strokeStyle='#8a4a3a';cx.lineWidth=1.2;cx.beginPath();cx.arc(hx+7.5,hy+5,2,.3,1.6);cx.stroke();
 const sx=x+4,sy=y-65;
-if(!stand){let th=-.85+Math.sin(t*1.3)*.04;
-if(mode==='wait'&&cast<1)th-=1.3*Math.sin(cast*Math.PI);else if(mode==='bite')th+=.16+Math.sin(t*30)*.06;
+if(!stand){let th=-.85+(preview?0:Math.sin(t*1.3)*.04);
+if(!preview&&mode==='wait'&&cast<1)th-=1.3*Math.sin(cast*Math.PI);else if(mode==='bite')th+=.16+Math.sin(t*30)*.06;
 const d0=th+.85,hx2=sx+14,hy2=sy+9-d0*6,dx=Math.cos(th),dy=Math.sin(th),L=86,bend=mode==='bite'?14:4,tx=hx2+dx*L,ty=hy2+dy*L;
 cx.lineCap='round';cx.strokeStyle=OL;cx.lineWidth=4.5;cx.beginPath();cx.moveTo(hx2-dx*10,hy2-dy*10);cx.quadraticCurveTo(hx2+dx*L*.6-dy*bend,hy2+dy*L*.6+dx*bend,tx,ty+bend*.3);cx.stroke();cx.strokeStyle='#6b4a2a';cx.lineWidth=2.4;cx.stroke();
-PT={x:tx,y:ty+bend*.3+b};
+if(!preview)PT={x:tx,y:ty+bend*.3+b};
 limb([[sx,sy],[sx+6,sy+10],[hx2,hy2]],6,jk);blob(()=>cx.arc(hx2,hy2,3.6,0,7),skin,1.6)}
 else{const sw=PA.swing,ang=-1.15+sw*1.6,hx2=sx+12+sw*6,hy2=sy+6-sw*2,dx=Math.cos(ang),dy=Math.sin(ang);
 limb([[hx2-dx*14,hy2-dy*14],[hx2+dx*40,hy2+dy*40]],3.5,'#8a5a34');blob(()=>cx.ellipse(hx2+dx*46,hy2+dy*46,4.5,8,ang+Math.PI/2,0,7),'#a8763f',1.8);
@@ -746,14 +789,57 @@ function crackView(){mbox.innerHTML=`<h2>ทุบอำพัน</h2><p class="
 function openCrack(){openedAt=performance.now();if(!S.amber){toast('ยังไม่มีอำพัน ออกเรือไปหามาก่อน');return}sheet='amber';hits=0;crackView();modal.classList.add('on')}
 function reveal(){sheet='reveal';S.amber--;const c=newCard(),dup=!!c.dup;delete c.dup;if(!dup){S.cards.push(c);if(crewCards().length<CREW)S.crew.push(c.id)}save();const ch=CH[c.a];
 mbox.innerHTML=`<p class="hint" style="margin:0">${dup?'เจอเพื่อนเก่า!':'เพื่อนใหม่!'}</p><h2>${ch.n}${c.rar===3?' ร่างทอง':''}</h2><p style="margin:0;color:#b8640f;font:500 15px Mitr">${dup?'★ เพิ่มเป็น '+c.lv+' ดาว · ค่าพลังเพิ่มขึ้น':ch.ttl}</p><div class="pop" style="max-width:200px;margin:0 auto;width:100%">${cardHTML(c)}</div><p style="margin:0;font:500 16px Mitr">“${pick(ch.lines)}”</p><p class="hint">${perkText(c)}</p>${S.amber?'<button class="main" id="mAgain">ทุบอีกก้อน ('+S.amber+')</button>':''}<button id="mClose">ปิด</button>`}
+function drawCharacterPreview(form){
+ const canvas=$('#characterPreview'),context=canvas.getContext('2d');
+ if(!context)return;
+ const colors=Object.fromEntries(new FormData(form));
+ const outfit={...characters[characterId(colors.id)],...colors};
+ const gameContext=cx;
+ cx=context;
+ cx.save();
+ try{
+  cx.clearRect(0,0,canvas.width,canvas.height);
+  cx.scale(2,2);
+  personShape(133,124,false,outfit,true);
+ }finally{
+  cx.restore();
+  cx=gameContext;
+ }
+}
+mbox.addEventListener('input',e=>{
+ if(e.target.form?.id==='characterForm'&&e.target.type==='color')drawCharacterPreview(e.target.form);
+});
+function applyCharacterColors(form,preset,keys){
+ for(const key of keys)form.elements.namedItem(key).value=preset[key];
+}
+mbox.addEventListener('change',e=>{
+ const form=e.target.form;
+ if(form?.id!=='characterForm')return;
+ if(e.target.name==='id'){
+  applyCharacterColors(form,characters[characterId(e.target.value)],Object.keys(characterFields));
+  form.elements.outfit.value='';
+ }
+ if(e.target.name==='outfit'&&e.target.value){
+  applyCharacterColors(form,characters[characterId(e.target.value)],['jacket','hat']);
+ }
+ drawCharacterPreview(form);
+});
 mbox.addEventListener('submit',e=>{
  if(e.target.id!=='characterForm'||sheet!=='character')return;
  e.preventDefault();
- S.character=Object.fromEntries(new FormData(e.target));
+ const {outfit,...selection}=Object.fromEntries(new FormData(e.target));
+ S.character=selection;
  save();
  closeSheet();
 });
 mbox.addEventListener('click',e=>{if(performance.now()-openedAt<450)return;const tg=e.target;
+if(tg.closest('[data-reset-look]')){
+ const form=$('#characterForm');
+ applyCharacterColors(form,characters[characterId(form.elements.id.value)],Object.keys(characterFields));
+ form.elements.outfit.value='';
+ drawCharacterPreview(form);
+ return;
+}
 if(tg.closest('#amber')){hits++;if(hits>=5){reveal();return}crackView();$('#amber').classList.add('knock');return}
 if(tg.id==='mAgain'){openCrack();return}
 if(tg.closest('#mClose')){closeSheet();return}
