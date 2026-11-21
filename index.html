@@ -88,9 +88,9 @@ body{overflow:hidden;overscroll-behavior:none}
 .inventory-slot.empty{opacity:.45;border-style:dashed}
 @media(max-height:520px){.mbox:has(.inventory-tabs){padding:10px;gap:5px}.inventory-slot{min-height:65px}.inventory-slot svg{height:22px}}
 </style></head><body>
-<div class="game-version">Nekofish · เวอร์ชันทดลอง 19</div>
+<div class="game-version">Nekofish · เวอร์ชันทดลอง 20</div>
 <div class="fig" id="fig"><canvas id="cv"></canvas><div id="toast"></div></div>
-<div id="voyageHud" hidden><span id="voyageCatch"></span><button type="button" id="voyageFeed">กระเป๋าบนเรือ</button></div>
+<div id="voyageHud" hidden><span id="voyageCatch"></span></div>
 <div id="modal"><div class="mbox" id="mbox"></div></div>
 <script>
 {
@@ -181,51 +181,63 @@ let LAND=null,mode='port',T=null,R=null,F=null,item=null,waitT=0,biteT=0,holding
 function toast(m,ms=1800){const el=$('#toast');el.style.top=(mode==='reel'||mode==='fight'||mode==='land')?'128px':'52px';el.textContent=m;el.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('on'),ms)}
 
 let sheet=null;
-const voyageHud=$('#voyageHud'),voyageCatch=$('#voyageCatch'),voyageFeed=$('#voyageFeed');
+const voyageHud=$('#voyageHud'),voyageCatch=$('#voyageCatch');
 function updateVoyageHud(){
  voyageHud.hidden=!T;
  if(!T)return;
  voyageCatch.innerHTML='จับได้ <b>'+T.caught+'</b> ตัว'+(T.caught!==T.fish.length?' · เหลือ '+T.fish.length:'');
- const hungry=crewCards().filter(cat=>cat.hungry).length;
- voyageFeed.textContent='กระเป๋าบนเรือ'+(hungry?' · หิว '+hungry:'');
- voyageFeed.disabled=mode!=='idle';
 }
-voyageFeed.addEventListener('click',()=>{
- if(T&&mode==='idle'&&!modal.classList.contains('on')){
-  inventoryTab='catch';inventoryPage=0;openSheet('voyage-feed');
- }
-});
+function openVoyageBag(cat){
+ if(!T||mode!=='idle'||modal.classList.contains('on'))return;
+ feedCatId=cat?.id||null;
+ inventoryTab=cat&&!T.fish.length?'box':'catch';inventoryPage=0;
+ openSheet('voyage-feed');
+}
 function setMode(m){mode=m;updateVoyageHud();if(m==='port'&&sheet)renderSheet()}
 const CREW=3;
 const rodCost=()=>40*S.rod*S.rod,boatCost=()=>70*S.boat*S.boat;
 const perksHTML=()=>{const ac=activeCombos().map(c=>c[2]);return '<div><b>คู่หู</b> พาแมวคู่นี้ขึ้นเรือด้วยกันได้โบนัส</div>'+COMBO.map(([a,b,n,d])=>`<div style="${ac.includes(n)?'color:#3aa35a;font-weight:600':'opacity:.7'}">${ac.includes(n)?'✓ ':''}${CH[a].n} + ${CH[b].n} · ${n}: ${d}</div>`).join('')+'<div style="margin-top:6px">แมวบนเรือที่<b>อิ่ม</b>เท่านั้นที่ช่วยและนับคู่หู</div>'};
-let inventoryTab='catch',inventoryPage=0;
+let inventoryTab='catch',inventoryPage=0,feedCatId=null;
+const boatRoles={
+ fishing:{label:'เรือตกปลา',desc:'วงดึงปลาใหญ่ขึ้น',cost:55},
+ escort:{label:'เรือคุ้มครอง',desc:'ลดเสบียงที่เสียเมื่อเจอพายุ',cost:45},
+ supply:{label:'เรือเสบียง',desc:'เพิ่มเสบียงเริ่มต้น 3 ต่อระดับ',cost:40}
+};
+const boatLevel=role=>S.fleet?.[role]||0;
+const roleCost=role=>boatRoles[role].cost*(boatLevel(role)+1);
+
 function renderVoyageInventory(){
- const tabs=[['catch','บนเรือ '+T.fish.length],['box','ในหีบ '+S.box.length],['feed','ให้อาหาร']];
+ const cat=crewCards().find(c=>c.id===feedCatId&&c.hungry);
+ const tabs=[['catch','บนเรือ '+T.fish.length],['box','ในหีบ '+S.box.length]];
  const tabBar=`<div class="inventory-tabs">${tabs.map(([id,label])=>`<button type="button" data-inventory-tab="${id}" aria-pressed="${id===inventoryTab}">${label}</button>`).join('')}</div>`;
  let contents;
- if(inventoryTab==='feed'){
-  const fishCount=T.fish.length+S.box.length;
-  contents=crewCards().map(cat=>`<button type="button" data-feed="${cat.id}" ${!fishCount||(!cat.hungry&&(cat.bond||0)>=5)?'disabled':''}>${CH[cat.a].n} · ${cat.hungry?'หิว':'อิ่ม'} · ป้อน 1 ตัว</button>`).join('');
-  if(!fishCount)contents+='<p class="hint">ยังไม่มีปลาให้แมว ลองตกปลาก่อน</p>';
- }else{
-  const list=inventoryTab==='catch'?T.fish:S.box;
+ const list=inventoryTab==='catch'?T.fish:S.box;
+ {
   const pageSize=innerHeight<=520?3:6;
   const count=Math.max(1,Math.ceil(list.length/pageSize));
   inventoryPage=cl(inventoryPage,0,count-1);
   const fish=list.slice(inventoryPage*pageSize,(inventoryPage+1)*pageSize);
   const slots=Array.from({length:pageSize},(_,i)=>{
    const f=fish[i];
-   return f?`<div class="inventory-slot">${fishSVG(fishArtColor(f))}<b>${f.n}</b><span>เกรด ${GR[f.g]} · ${f.cm} ซม.</span></div>`:'<div class="inventory-slot empty" aria-hidden="true">—</div>';
+   const details=f?`${fishSVG(fishArtColor(f))}<b>${f.n}</b><span>เกรด ${GR[f.g]} · ${f.cm} ซม.</span>`:'';
+   return f?(cat?`<button type="button" class="inventory-slot" data-feed-slot="${inventoryPage*pageSize+i}">${details}</button>`:`<div class="inventory-slot">${details}</div>`):'<div class="inventory-slot empty" aria-hidden="true">—</div>';
   });
   contents=`<div class="inventory-grid">${slots.join('')}</div>`;
   if(!list.length)contents+='<p class="hint">ช่องยังว่าง</p>';
   if(count>1)contents+=`<div class="inventory-pages"><button type="button" data-inventory-page="-1" ${inventoryPage===0?'disabled':''}>ก่อนหน้า</button><span>${inventoryPage+1}/${count}</span><button type="button" data-inventory-page="1" ${inventoryPage===count-1?'disabled':''}>ถัดไป</button></div>`;
  }
- mbox.innerHTML=`<h2>กระเป๋าบนเรือ</h2>${tabBar}${contents}<button type="button" id="mClose" class="main">กลับไปตกปลา</button>`;
+ mbox.innerHTML=`<h2>${cat?'ป้อนปลาให้ '+CH[cat.a].n:'กระเป๋าบนเรือ'}</h2>${cat?`<p class="hint">เลือกปลา 1 ตัว · ของชอบ ${CH[cat.a].fav}</p>`:''}${tabBar}${contents}<button type="button" id="mClose" class="main">กลับไปตกปลา</button>`;
 }
 function renderSheet(){
 if(sheet==='voyage-feed'){renderVoyageInventory();return}
+if(sheet==='boat'){
+ const cost=boatCost();
+ mbox.innerHTML=`<h2>อู่เรือ</h2><p class="hint">มี ${S.coins} เหรียญ</p>
+ <button id="mUp" ${S.boat>=6||S.coins<cost?'disabled':''}>เรือหลัก Lv.${S.boat} · ${S.boat>=6?'สูงสุด':'+4 เสบียง / '+cost+' เหรียญ'}</button>
+ ${Object.entries(boatRoles).map(([role,info])=>`<button type="button" data-upgrade-role="${role}" ${boatLevel(role)>=2||S.coins<roleCost(role)?'disabled':''}>${info.label} Lv.${boatLevel(role)} · ${boatLevel(role)>=2?'สูงสุด':roleCost(role)+' เหรียญ'}<br><small>${info.desc}</small></button>`).join('')}
+ <button id="mClose" class="main">ปิด</button>`;
+ return;
+}
 if(sheet==='box'||sheet==='shop'){const shop=sheet==='shop',got=FISH.filter(f=>S.book[f[0]]).length,sel=S.box.filter(f=>f.sell),selv=sel.reduce((a,f)=>a+priceOf(f),0);
 const pool=[...S.box].sort((a,b)=>b.g-a.g||b.v-a.v);
 const row=f=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)"><span style="flex:none;width:54px">${fishSVG('#cfe0e8').replace('width="120" height="70"','width="54" height="32"')}</span><span style="flex:1;text-align:left">${f.n} <b style="color:${GC[f.g]}">${GR[f.g]}</b>${f.n===SPECIAL()?' <b style="color:#d6304e">ขายดี</b>':''}<br><span class="hint" style="margin:0">${f.cm} ซม. · ${shop?'ร้านให้ '+priceOf(f):'ราคาประมาณ '+priceOf(f)} เหรียญ</span></span>${!shop?'':`<button data-mark="${f.id}" style="flex:none;min-height:40px;font-size:14px;${f.sell?'background:var(--amb);color:#2a1606;box-shadow:none':''}">${f.sell?'คัดขาย ✓':'เก็บไว้'}</button>`}</div>`;
@@ -240,11 +252,11 @@ let openedAt=0;
 function openSheet(k){sheet=k;renderSheet();modal.classList.add('on');openedAt=performance.now()}
 function closeSheet(){sheet=null;modal.classList.remove('on');if(mode==='port'){const u=checkUnlocks();if(u)setTimeout(()=>showUnlock(u),250)}}
 function sail(){
-T={log:[],fish:[],caught:0,zone:1,food:6+S.boat*4+(has(1)?3:0),hold:0,amb:0};setMode('idle')}
+T={log:[],fish:[],caught:0,zone:1,food:6+S.boat*4+boatLevel('supply')*3+(has(1)?3:0),hold:0,amb:0};setMode('idle')}
 function doCast(){
 if(T.food<=0){strand();return}
 T.food--;cast=0;const r=Math.random();
-if(r<0.06){T.food=Math.max(0,T.food-2);shake=.3;toast('พายุพัดมา! เสบียง −2')}
+if(r<0.06){const loss=2-boatLevel('escort');T.food=Math.max(0,T.food-loss);shake=.3;toast(loss?'พายุพัดมา! เสบียง −'+loss:'เรือคุ้มครองพาขบวนผ่านพายุ!')}
 else if(r<0.11){T.food+=2;toast('เจอลังลอยน้ำ เสบียง +2')}
 else if(r<0.14&&T.hold>0){const l=Math.ceil(T.hold*.15);T.hold-=l;toast('นกนางนวลขโมยปลาไป −'+l+' เหรียญ')}
 waitT=(1.4+Math.random()*3)*(has(2)?.5:1);setMode('wait')}
@@ -280,7 +292,7 @@ if(k==='chest')return{t:k,n:'หีบสมบัติ',v:20+z*15+ri(20),d:.45
 if(k==='amber')return{t:k,n:'อำพันแมว',v:0,d:.55+z*.05};
 return{t:'mon',n:pick(['ปูหนามเหล็ก','ปลาไหลเงา','หมึกคลั่ง','งูทะเลเสียงหวีด']),v:30+z*20,d:0,hp:3+z*2}}
 const LZ=7;
-function spawnC(){const r=cl((.62-R.d*.26+S.rod*.03+(has(4)?.1:0))*(.8+R.ST[1]*.04),.3,1);let x,k=0;
+function spawnC(){const r=cl((.62-R.d*.26+S.rod*.03+boatLevel('fishing')*.07+(has(4)?.1:0))*(.8+R.ST[1]*.04),.3,1);let x,k=0;
 do{x=-3+Math.random()*6}while(R.cs.some(c=>Math.abs(c.x-x)<(c.r+r)*1.4+.8)&&++k<40);if(R.cs.some(c=>Math.abs(c.x-x)<(c.r+r)*1.4+.8))return;
 const lk=1+(R.ST[2]-3)*.08,q=Math.random(),type=q<.07*lk?'heart':q<.13*lk?'time':q<.22*lk?'coin':q<.22*lk+.14?'x2':'n',life=2.8-R.d*1.1;R.cs.push({x,r:r*(R.big>0?1.5:1),life,max:life,type:R.midas>0?'coin':R.tr==='gold'&&type==='n'&&Math.random()<.35?'coin':type,need:type==='x2'?2:1,fake:R.tr==='trick'&&!R.reveal&&!hasCombo('กลางคืน')&&Math.random()<.4})}
 const GR=['C','B','A','S','SS'],GC=['#9aa5ad','#5fb3c9','#5fd16a','#e8912e','#d6304e'],GM=[1,1.2,1.5,2,3];
@@ -460,7 +472,7 @@ if(F.st==='wind'){PA.crouch=1;F.st='idle';F.t=.8+Math.random();F.crit=true;toast
 function loseFight(){const cs=crewCards(),L=cs.length?pick(cs):null;T.food=Math.max(0,T.food-2);
 if(L){L.lives--;if(L.lives<=0){L.ret=1;S.crew=S.crew.filter(id=>id!==L.id);toast(L.n+' ใช้ครบ 9 ชีวิตแล้ว ขึ้นกำแพงอนุสรณ์',3000)}else toast(L.n+' บาดเจ็บ เสียไป 1 ชีวิต (เหลือ '+L.lives+')',2400)}else toast('แพ้! เสบียงหายไป 2',1800)
 save();setMode('idle')}
-function act(a){({sail,cast:doCast,far,home:()=>goHome(),hook,hold:strike,hit,dodge,amber:openCrack,box:()=>openSheet('box'),shop:()=>openSheet('shop'),cards:()=>openSheet('cards'),rod:()=>openSheet('rod'),boat:()=>openSheet('boat')})[a]?.()}
+function act(a){({sail,cast:doCast,far,supplyBag:()=>openVoyageBag(),home:()=>goHome(),hook,hold:strike,hit,dodge,amber:openCrack,box:()=>openSheet('box'),shop:()=>openSheet('shop'),cards:()=>openSheet('cards'),rod:()=>openSheet('rod'),boat:()=>openSheet('boat')})[a]?.()}
 
 const cv=$('#cv'),fig=$('#fig');const cx=cv.getContext('2d');let W=0,H=0;
 const fit=()=>{const r=fig.getBoundingClientRect(),d=Math.min(2,devicePixelRatio||1);W=r.width;H=r.height;cv.width=W*d;cv.height=H*d;cx.setTransform(d,0,0,d,0,0)};
@@ -607,6 +619,18 @@ function drawCat(x,y,L,stand){
  if(L)drawAcc(CH[L.a].acc,x+11,y-34+bob,x,y);
 }
 
+function drawSupplyBoat(x,y){
+ cx.save();cx.translate(x,y);
+ cx.fillStyle='#18384844';cx.beginPath();cx.ellipse(0,13,28,6,0,0,7);cx.fill();
+ cx.fillStyle='#b47753';cx.beginPath();cx.moveTo(-30,0);cx.lineTo(30,0);
+ cx.quadraticCurveTo(22,17,0,17);cx.quadraticCurveTo(-23,17,-30,0);cx.fill();
+ cx.fillStyle='#f2ca9a';rr(-31,-3,62,6,3);
+ cx.fillStyle='#e2aa68';rr(-12,-19,24,17,4);
+ cx.fillStyle='#906347';rr(-3,-14,6,6,2);
+ cx.restore();
+ lbl('เรือเสบียง · กระเป๋า',x,y+40);
+ if(mode==='idle')hitR(x-55,y-25,110,71,'supplyBag');
+}
 function draw(){
 const reeling=mode==='reel',landing=mode==='land';
 const z=T?Math.min(T.zone,5):1,hz=H*.42;
@@ -648,6 +672,18 @@ if(!fight){
  blob(()=>cx.ellipse(gripX,gripY,3.8,3,-.3,0,7),captain?TR[captain.a].c:'#e59a4a',0);
 }
 drawBoat(bx,by);
+if(T){
+ const supplyX=cl(bx-52,60,W-60),supplyY=by+60;
+ drawSupplyBoat(supplyX,supplyY);
+ if(mode==='idle'){
+  for(const pet of PETPOS){
+   const cat=crewCards().find(c=>c.id===pet.id);
+   if(!cat?.hungry)continue;
+   lbl('หิว',pet.x,pet.y-7);
+   SP.unshift({x:pet.x-20,y:pet.y-29,w:40,h:66,cat});
+  }
+ }
+}
 
 if(T&&!fight&&(mode==='idle'||mode==='wait'||mode==='bite')){const sx=W*.74,sy=hz+(H-hz)*.42+6;
 {const g=cx.createRadialGradient(sx,sy,0,sx,sy,70);g.addColorStop(0,'#bff4ff55');g.addColorStop(1,'#bff4ff00');cx.fillStyle=g;cx.beginPath();cx.ellipse(sx,sy,72,20,0,0,7);cx.fill()}
@@ -810,9 +846,10 @@ addEventListener('pointerup',()=>{holding=false});addEventListener('pointercance
 fig.addEventListener('pointerdown',e=>{e.preventDefault();const b=fig.getBoundingClientRect(),x=e.clientX-b.left,y=e.clientY-b.top;
 if(mode==='land')return;if(mode==='reel'){strike();return}if(mode==='wait'||mode==='bite'){hook();return}
 let best=null;for(const p of SP)if(x>=p.x&&x<=p.x+p.w&&y>=p.y&&y<=p.y+p.h){best=p;break}
-if(best)act(best.a);else if(mode==='fight')hit();else if(mode==='idle'&&y>H*.42)doCast()});
+if(best){if(best.cat)openVoyageBag(best.cat);else act(best.a)}else if(mode==='fight')hit();else if(mode==='idle'&&y>H*.42)doCast()});
 addEventListener('keydown',e=>{if(e.repeat||$('#modal').classList.contains('on'))return;
 if(e.code==='Space'){e.preventDefault();({port:sail,idle:doCast,wait:hook,bite:hook,reel:strike,fight:dodge})[mode]?.()}
+else if(e.code==='KeyI'&&mode==='idle')openVoyageBag();
 else if(e.key==='j'&&mode==='fight')hit()});
 addEventListener('keyup',e=>{if(e.code==='Space')holding=false});
 
@@ -838,25 +875,43 @@ if(sheet==='voyage-feed'){
  if(tab){inventoryTab=tab.dataset.inventoryTab;inventoryPage=0;renderSheet();return}
  if(page){inventoryPage+=Number(page.dataset.inventoryPage);renderSheet();return}
 }
-const fd=tg.closest('[data-feed]');
-if(fd&&(sheet==='cards'||sheet==='voyage-feed')){
- const atSea=sheet==='voyage-feed',cat=(atSea?crewCards():S.cards).find(x=>x.id===fd.dataset.feed);
- if(!cat||cat.ret||(!cat.hungry&&(cat.bond||0)>=5))return;
- const stock=atSea?[...T.fish,...S.box]:S.box;
- const ordered=[...stock].sort((a,b)=>a.v-b.v);
- const favorite=ordered.find(f=>f.n===CH[cat.a].fav),fish=favorite||ordered[0];
- if(!fish)return;
- if(atSea&&T.fish.includes(fish)){
-  T.fish=T.fish.filter(f=>f!==fish);
-  S.book[fish.n]=Math.max(S.book[fish.n]||0,fish.cm);
- }
- else S.box=S.box.filter(f=>f!==fish);
+const upgrade=tg.closest('[data-upgrade-role]');
+if(upgrade&&sheet==='boat'){
+ const role=upgrade.dataset.upgradeRole;
+ if(!Object.hasOwn(boatRoles,role)||boatLevel(role)>=2||S.coins<roleCost(role))return;
+ S.coins-=roleCost(role);
+ S.fleet??={};S.fleet[role]=boatLevel(role)+1;
+ save();renderSheet();return;
+}
+const feedSlot=tg.closest('[data-feed-slot]');
+if(feedSlot&&sheet==='voyage-feed'){
+ const cat=crewCards().find(c=>c.id===feedCatId&&c.hungry);
+ const stock=inventoryTab==='catch'?T.fish:S.box;
+ const index=Number(feedSlot.dataset.feedSlot),fish=stock[index];
+ if(!cat||!fish)return;
+ stock.splice(index,1);
+ if(inventoryTab==='catch')S.book[fish.n]=Math.max(S.book[fish.n]||0,fish.cm);
+ feedCat(cat,fish);
+ feedCatId=null;closeSheet();return;
+}
+function feedCat(cat,fish){
+ const favorite=fish.n===CH[cat.a].fav;
  cat.hungry=false;
  cat.bxp=(cat.bxp||0)+(1+fish.g)*(favorite?2:1);
  const bond=Math.min(5,Math.floor(cat.bxp/4)),increased=bond>(cat.bond||0);
  cat.bond=bond;
  toast(CH[cat.a].n+' กิน'+fish.n+(favorite?' ของชอบ! ♥♥':increased?' ความผูกพันเพิ่มขึ้น ♥':' อิ่มแล้ว'),1600);
- save();updateVoyageHud();renderSheet();return;
+ save();updateVoyageHud();
+}
+const fd=tg.closest('[data-feed]');
+if(fd&&sheet==='cards'){
+ const cat=S.cards.find(x=>x.id===fd.dataset.feed);
+ if(!cat||cat.ret||(!cat.hungry&&(cat.bond||0)>=5))return;
+ const ordered=[...S.box].sort((a,b)=>a.v-b.v);
+ const fish=ordered.find(f=>f.n===CH[cat.a].fav)||ordered[0];
+ if(!fish)return;
+ S.box=S.box.filter(x=>x!==fish);
+ feedCat(cat,fish);renderSheet();return;
 }
 const el=tg.closest('.card');if(el&&sheet==='cards'){const c=S.cards.find(x=>x.id===el.dataset.id);if(!c||c.ret)return;
 const i=S.crew.indexOf(c.id);if(i>=0)S.crew.splice(i,1);else if(crewCards().length<CREW)S.crew.push(c.id);else{toast('พาแมวขึ้นเรือได้ 3 ตัว เอาตัวอื่นลงก่อน');return}
