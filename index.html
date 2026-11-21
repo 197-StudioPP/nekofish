@@ -76,7 +76,7 @@ button.wait{position:relative;overflow:hidden;opacity:1;background:#d9cbb2;box-s
 .game-version{position:fixed;right:max(10px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));z-index:2;pointer-events:none;padding:3px 8px;border-radius:12px;background:#142b38e6;color:#fff;font:12px/1.4 Sarabun,system-ui,sans-serif}
 body{overflow:hidden;overscroll-behavior:none}
 </style></head><body>
-<div class="game-version">Nekofish · เวอร์ชันทดลอง 11</div>
+<div class="game-version">Nekofish · เวอร์ชันทดลอง 12</div>
 <div class="fig" id="fig"><canvas id="cv"></canvas><div id="toast"></div></div>
 <div id="modal"><div class="mbox" id="mbox"></div></div>
 <script>
@@ -385,14 +385,14 @@ cx.strokeStyle='#ffffffee';cx.lineWidth=1.6;cx.beginPath();cx.moveTo(tX,tY);cx.q
 const captain=crewCards()[0];
 const fur=captain?TR[captain.a].c:'#e59a4a';
 const catX=cxp+shift,catY=Math.min(H-12,cyp+24)+bend*.22;
-const gripX=catX+23,gripY=catY-21-brace*12;
-drawPet(catX,catY,captain,1.35);
+const gripX=catX+17,gripY=catY-15-brace*9;
+drawPet(catX,catY,captain,.92);
 drawCatRod(gripX,gripY,tX,tY,brace*17);
 blob(()=>cx.ellipse(gripX,gripY,6,5,-.45,0,7),fur,0);
 if(cheer){
  const lift=ease(cl((LAND.t-1.05)/.23,0,1));
- const pawX=catX+4-lift*13,pawY=catY-15-lift*21;
- cx.lineCap='round';cx.beginPath();cx.moveTo(catX+6,catY-13);cx.lineTo(pawX,pawY);
+ const pawX=catX+3-lift*10,pawY=catY-10-lift*15;
+ cx.lineCap='round';cx.beginPath();cx.moveTo(catX+4,catY-9);cx.lineTo(pawX,pawY);
  cx.strokeStyle=fur;cx.lineWidth=6;cx.stroke();
  blob(()=>cx.ellipse(pawX,pawY,5,5,0,0,7),fur,0);
 }
@@ -566,10 +566,10 @@ function captainCastSprite(cat,frame){
  <g transform="translate(${x} ${y})">
  <path d="M-17 -4 Q-24 -23 -16 -23 Q-11 -21 -4 -14 H6 Q13 -22 17 -20 Q21 -18 19 -3Z" fill="${points||fur}"/>
  <path d="M-16 -9 Q-20 -20 -15 -19 L-8 -12 M12 -11 L17 -17 Q19 -18 17 -8" fill="#f4abb1"/>
- <path d="M-19 0 C-20 -12 -9 -16 1 -15 C13 -15 23 -8 23 1 C23 10 13 15 1 15 C-10 15 -20 11 -19 0Z" fill="${fur}"/>
+ <path d="M-19 0 C-20 -10 -11 -16 1 -16 C14 -16 23 -9 23 1 C23 11 14 16 1 16 C-12 16 -20 11 -19 0Z" fill="${fur}"/>
  <ellipse cx="6" cy="7" rx="8" ry="5" fill="${points||light}" opacity=".7"/>
- <ellipse cx="-9" cy="6" rx="4" ry="2" fill="#ef909d" opacity=".55"/>
- <ellipse cx="17" cy="6" rx="3.5" ry="2" fill="#ef909d" opacity=".55"/>
+ <ellipse cx="-9" cy="6" rx="4.5" ry="2.6" fill="#ef909d" opacity=".55"/>
+ <ellipse cx="17" cy="6" rx="4" ry="2.6" fill="#ef909d" opacity=".55"/>
  <circle cx="-4" cy="0" r="1.9" fill="${dot}"/><circle cx="12" cy="0" r="1.9" fill="${dot}"/>
  <path d="M4 5 Q7 3 9 5 Q7 9 4 5" fill="#cb7886"/>
  </g>
@@ -607,22 +607,26 @@ mates.forEach((cat,i)=>{
 const catX=bx+8+(fight?PA.swing*11:0),catY=by-6+(fight?PA.crouch*7:0);
 const progress=mode==='wait'?cast:0;
 const frame=mode==='wait'&&cast<1?(cast<.34?1:cast<.52?2:3):0;
-const pose=castCels[frame];
+const pose=castCels[frame],kittenScale=.74;
 if(mode==='port'||mode==='idle'){
  for(let i=1;i<castCels.length;i++)captainCastSprite(captain,i);
 }
 const sprite=fight?null:captainCastSprite(captain,frame);
 if(sprite?.naturalWidth){
- cx.drawImage(sprite,catX-48,catY-68,100,72);
- if(captain)drawAcc(CH[captain.a].acc,catX+pose.head[0],catY+pose.head[1],catX,catY);
-}else drawPet(catX,catY,captain,fight?1.05:1);
+ cx.save();
+ cx.translate(catX,catY);
+ cx.scale(kittenScale,kittenScale);
+ cx.drawImage(sprite,-48,-68,100,72);
+ if(captain)drawAcc(CH[captain.a].acc,...pose.head,0,0);
+ cx.restore();
+}else drawPet(catX,catY,captain,fight?.84:kittenScale);
 if(captain)PETPOS.push({x:catX,y:catY-54,id:captain.id});
 const rodAngle=pose.angle+(mode==='bite'?Math.sin(t*27)*.09:0);
-const gripX=catX+pose.grip[0],gripY=catY+pose.grip[1];
+const gripX=catX+pose.grip[0]*kittenScale,gripY=catY+pose.grip[1]*kittenScale;
 const tipx=gripX+Math.cos(rodAngle)*67,tipy=gripY+Math.sin(rodAngle)*67;
 if(!fight){
  drawCatRod(gripX,gripY,tipx,tipy,mode==='bite'?12:4);
- blob(()=>cx.ellipse(gripX,gripY,4.8,4,-.3,0,7),captain?TR[captain.a].c:'#e59a4a',0);
+ blob(()=>cx.ellipse(gripX,gripY,3.8,3,-.3,0,7),captain?TR[captain.a].c:'#e59a4a',0);
 }
 drawBoat(bx,by);
 
