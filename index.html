@@ -132,10 +132,17 @@ body[data-mode=reel] .game-version{display:none}
 .quest-coin{display:grid;place-items:center;width:25px;height:25px;border-radius:50%;background:#ffd285;color:#745030;font-weight:700}
 .quest-detail button.quest-claim{background:#ffc47b;color:#442c22;font-weight:600}
 .quest-detail details summary{cursor:pointer;font-size:13px}
+#questQuick{position:fixed;z-index:3;top:max(47px,calc(env(safe-area-inset-top) + 43px));left:50%;transform:translateX(-50%);display:flex;gap:4px;width:min(410px,calc(100% - 18px))}
+body[data-mode=idle] #questQuick{top:max(73px,calc(env(safe-area-inset-top) + 66px))}
+@media(max-height:430px) and (min-width:580px){#questQuick{top:5px;width:min(340px,calc(100% - 320px))}}
+#questQuick[hidden],body:has(#modal.on) #questQuick{display:none}
+#questQuick button{flex:1;min-height:40px;padding:4px 3px;white-space:nowrap;font:500 clamp(10px,2.8vw,13px) Mitr,sans-serif;color:#fff3d3;background:#203c53eb;border-radius:11px;box-shadow:inset 0 -2px 0 var(--quest-accent)}
+#questQuick button[aria-label*="รับรางวัลได้"]{background:#ffc47b;color:#443220}
 </style></head><body>
-<div class="game-version">Nekofish · เวอร์ชันทดลอง 36</div>
+<div class="game-version">Nekofish · เวอร์ชันทดลอง 37</div>
 <div class="fig" id="fig"><canvas id="cv"></canvas><div id="toast"></div></div>
 <span id="voyageCatch" hidden></span>
+<nav id="questQuick" aria-label="ภารกิจในหน้าเกม" hidden></nav>
 <div id="trainingHUD" aria-live="polite" hidden></div>
 <div id="modal"><div class="mbox" id="mbox"></div></div>
 <script>
@@ -256,6 +263,7 @@ function trainingMarker(x,y,label){
  cx.fillStyle='#3d352d';cx.fillText(label,x,top+18,width-9);cx.restore();
 }
 function refreshTrainingHUD(){
+ refreshQuestQuick();
  const hud=$('#trainingHUD'),step=trainingStage();
  const training=step>=0&&step<trainingSteps.length;
  const daily=S.trackedDaily===currentDay()?dailyFishing():null;
@@ -353,6 +361,26 @@ const questTypes={
  daily:{label:'รายวัน',icon:'☀'}
 };
 let questTab='main';
+const questQuick=$('#questQuick');
+function refreshQuestQuick(){
+ questQuick.hidden=mode!=='port'&&mode!=='idle';
+ if(questQuick.hidden)return;
+ const main=cl(trainingStage(),0,trainingSteps.length),side=collectionQuest(),daily=dailyFishing();
+ const entries=[
+  ['main','หลัก',main,trainingSteps.length,!!S.fishingTraining?.claimed],
+  ['side','รอง',side.count,side.target,side.claimed],
+  ['daily','รายวัน',daily.count,3,daily.claimed]
+ ];
+ questQuick.innerHTML=entries.map(([key,label,count,target,claimed])=>{
+  const progress=Math.min(count,target)+'/'+target,ready=count>=target&&!claimed;
+  return `<button type="button" class="quest-${key}" data-quick-quest="${key}" aria-label="${questTypes[key].label} ${progress}${ready?' รับรางวัลได้':''}">${questTypes[key].icon} ${label} ${claimed?'✓':progress}${ready?' •':''}</button>`;
+ }).join('');
+}
+questQuick.addEventListener('click',e=>{
+ const key=e.target.closest('[data-quick-quest]')?.dataset.quickQuest;
+ if(!key||modal.classList.contains('on')||(mode!=='port'&&mode!=='idle'))return;
+ questTab=key;openSheet('quest');
+});
 function collectionQuest(){
  const count=FISH.filter(([name])=>S.book[name]).length;
  const next=[2,4,8].find(n=>n>(S.collectionPrize||0));
@@ -361,7 +389,7 @@ function collectionQuest(){
 function claimCollectionReward(){
  const task=collectionQuest();
  if(task.claimed||task.count<task.target)return;
- S.collectionPrize=task.target;S.coins+=task.reward;save();renderSheet();
+ S.collectionPrize=task.target;S.coins+=task.reward;save();refreshQuestQuick();renderSheet();
 }
 function renderQuestBoard(){
  const tabs=`<div class="quest-tabs">${Object.entries(questTypes).map(([id,info])=>`<button type="button" class="quest-${id}" data-quest-tab="${id}" aria-pressed="${id===questTab}">${info.icon} ${info.label}</button>`).join('')}</div>`;
@@ -372,7 +400,7 @@ function renderQuestBoard(){
   task={name:'ออกเรือครั้งแรก',condition:done?'ฝึกตกปลาครบทุกขั้น':trainingSteps[count]||'ฝึกตกปลาครบทุกขั้น',count,target:trainingSteps.length,reward:50,claimed:done,action:'ตามป้ายในฉาก',id:'trackMain'};
   if(!done)extra=`<details><summary>ดูทุกขั้น</summary>${trainingChecklist(count)}</details>`;
  }else if(questTab==='side'){
-  task={...collectionQuest(),name:'นักสะสมปลา',condition:'บันทึกชนิดปลาในสมุดปลา',action:'ไปที่ตู้ปลา',id:'trackSide'};
+  task={...collectionQuest(),name:'นักสะสมปลา',condition:'บันทึกชนิดปลาในสมุดปลา',action:T?'ดูสมุดเมื่อกลับท่า':'ไปที่ตู้ปลา',id:'trackSide'};
   if(!task.claimed&&task.count>=task.target){task.action='รับรางวัล';task.id='questCollection';task.ready=true}
  }else{
   const daily=dailyFishing();
@@ -1214,7 +1242,7 @@ if(sheet==='quest'){
  const tab=tg.closest('[data-quest-tab]')?.dataset.questTab;
  if(tab&&Object.hasOwn(questTypes,tab)){questTab=tab;renderSheet();return}
  if(tg.id==='trackMain'){closeSheet();return}
- if(tg.id==='trackSide'){openSheet('aquarium');return}
+ if(tg.id==='trackSide'){if(T)closeSheet();else openSheet('aquarium');return}
  if(tg.id==='trackDaily'){S.trackedDaily=currentDay();save();refreshTrainingHUD();closeSheet();return}
  if(tg.id==='questCollection'){claimCollectionReward();return}
  if(tg.id==='dailyFishing'){
@@ -1287,7 +1315,7 @@ function feedCat(cat,fish){
  const bond=Math.min(5,Math.floor(cat.bxp/4)),increased=bond>(cat.bond||0);
  cat.bond=bond;
  toast(CH[cat.a].n+' กิน'+fish.n+(favorite?' ของชอบ! ♥♥':increased?' ความผูกพันเพิ่มขึ้น ♥':' อิ่มแล้ว'),1600);
- save();updateVoyageHud();
+ save();updateVoyageHud();refreshQuestQuick();
 }
 const fd=tg.closest('[data-feed]');
 if(fd&&sheet==='cards'){
