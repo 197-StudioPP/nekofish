@@ -148,7 +148,7 @@ body[data-mode=idle] #questQuick{top:max(74px,calc(env(safe-area-inset-top) + 66
 @keyframes quest-slide{from{opacity:0;transform:translateX(10px)}}
 @media(prefers-reduced-motion:reduce){#questQuick{animation:none}}
 </style></head><body>
-<div class="game-version">Nekofish · เวอร์ชันทดลอง 40</div>
+<div class="game-version">Nekofish · เวอร์ชันทดลอง 41</div>
 <div class="fig" id="fig"><canvas id="cv"></canvas><div id="toast"></div></div>
 <span id="voyageCatch" hidden></span>
 <aside id="questQuick" aria-label="ภารกิจในหน้าเกม" hidden>
@@ -545,13 +545,18 @@ else if(item.t==='fish'){const g=(()=>{const r=Math.random()+(R.perf||0)*.02+(R.
 T.fish.push({n:item.n,i:item.i,g,cm,v});T.caught++;dailyFishing().count++;advanceTraining(4);refreshTrainingHUD();updateVoyageHud();S.stat=S.stat||{};S.stat.caught=(S.stat.caught||0)+1;T.log.push({n:item.n,v,g,box:1});h=`<h2>${item.n}</h2><div class="pop" style="margin:0 auto">${fishSVG(fishArtColor(item),1)}</div><div style="display:flex;justify-content:center;gap:10px;align-items:center"><span style="background:${GC[g]};color:#fff;font:600 20px Mitr;padding:2px 14px;border-radius:10px">${GR[g]}</span><span style="font:500 18px Mitr">${cm} ซม.</span></div><p style="font:600 20px Mitr;margin:4px 0;color:var(--amb2)">ราคา ${v} เหรียญ</p>`}
 else{const col=item.t==='chest'?'#e8c547':'#9aa79a';T.hold+=item.v;T.log.push({n:item.n,v:item.v,g:-1});h=`<h2>${item.n}</h2>${item.t==='chest'?`<svg viewBox="0 0 100 80" width="140" height="112" style="margin:0 auto" aria-hidden="true"><rect x="12" y="34" width="76" height="40" rx="6" fill="#8a5a34"/><path d="M12 36 Q50 4 88 36Z" fill="#a8763f"/><rect x="12" y="34" width="76" height="6" fill="${col}"/><rect x="44" y="38" width="12" height="14" rx="2" fill="${col}"/></svg>`:`<div style="margin:0 auto">${fishSVG(col)}</div>`}<p style="font:600 22px Mitr;margin:4px 0;color:var(--amb2)">+${item.v} เหรียญ</p>`}
 LAND={t:0,h:h+statsLine()};R.cs=[];R.rush=0;R.jt=0;R.paw=0;R.fx=0;setMode('land');save()}
-function failReel(why){saveCh();showResult(`<h2>${R.hearts<=0?'สายเบ็ดขาด':R.time<=0?'หมดเวลา':'ปลาหลุด'}</h2><p>${why}</p><p class="hint">${item.n} · พลังปลาเหลือ ${Math.max(0,Math.round(R.hp/R.max*100))}%</p>`+statsLine());setMode('idle')}
+function failReel(why){saveCh();showResult(`<h2>${R.hearts<=0?'สายเบ็ดขาด':R.time<=0?'หมดเวลา':'ปลาหลุด'}</h2><p>${why}</p><p class="hint">แรงต้านเหลือ ${Math.max(0,Math.round(R.hp/R.max*100))}%</p>`+statsLine());setMode('idle')}
 const TRT={fast:{n:'ว่ายไว',d:'ปลาว่ายเร็วเป็นพิเศษ'},fierce:{n:'ดุร้าย',d:'กระชากสายทุก 7 วินาที'},armor:{n:'เกล็ดแข็ง',d:'ตีปกติเบาลงครึ่งหนึ่ง'},trick:{n:'ขี้หลอก',d:'มีวงปลอมปน'},gold:{n:'ปลาทอง',d:'วงเหรียญให้ 3 เท่า'}};
 let SKFX=null;
 const SKTXT={slow:'ปลาว่ายช้าลง',heal:'หัวใจ +1 · เวลา +5 วิ · กันกระชาก',coin:'เสกวงเหรียญ 3 วง',shadow:'3 ครั้งถัดไปเป๊ะอัตโนมัติ',smash:'ตบหนักใส่ปลา!',bait:'เสกวง 3 วง · คอมโบ +3',light:'วงใหญ่ขึ้น',freeze:'ปลาว่ายช้ามาก',midas:'ทุกวงเป็นเหรียญ',wave:'ตีแรง 2 เท่า · หัวใจ +1'};
 function autoCast(){if(mode!=='reel'||R.rush>0||SKFX)return;const i=R.sks.findIndex(k=>k.ch>=1&&(k.k!=='heal'||R.hearts<R.maxH||R.tr==='fierce'));if(i>=0)useSkill(i)}
 function chg(ev,o){for(const k of R.sks){let a=0;if(k.k==='slow')a=ev==='hit'?(o.center?.34:.08):0;else if(k.k==='heal')a=ev==='miss'||ev==='lash'?.5:ev==='hit'?.05:0;else if(k.k==='coin')a=ev==='hit'?(o.bonus?.4:.07):0;else if(k.k==='shadow')a=ev==='hit'?.05+.04*Math.min(R.combo,6):0;else if(k.k==='smash')a=ev==='rush'?.025:ev==='hit'?.06:0;else if(k.k==='bait')a=ev==='hit'?.12:0;else if(k.k==='light')a=ev==='miss'?.35:ev==='hit'?.06:0;else if(k.k==='freeze')a=ev==='hit'?(o.center?.25:.04):0;else if(k.k==='midas')a=ev==='hit'?(o.bonus?.35:.05):0;else if(k.k==='wave')a=ev==='hit'?(o.center?.14:.08):0;k.ch=Math.min(1,k.ch+a*(hasCombo('กินจุ')?1.3:1))}}
 function saveCh(){if(T){T.skc=T.skc||{};for(const k of R.sks)T.skc[k.card.id]=k.ch}}
+function linePull(){
+ const pulse=.5+.5*Math.sin(R.clock*3.3);
+ const counter=cl(R.paw/.3,0,1);
+ return {fish:pulse*pulse,counter};
+}
 function upReel(dt){autoCast();if(R.ann)R.ann.t-=dt;R.big=(R.big||0)-dt;R.freeze=(R.freeze||0)-dt;R.midas=(R.midas||0)-dt;R.power=(R.power||0)-dt;if(SKFX){SKFX.t+=dt;if(SKFX.t>SKFX.dur)SKFX=null}R.shield-=dt;
 if(R.tr==='fierce'&&R.rush<=0){R.lash-=dt;if(R.lash<=0){R.lash=7;if(R.shield>0){toast('สีสวาดกันไว้ได้!',900)}else{R.hearts--;shake=.4;chg('lash');toast('ปลากระชากสาย! เสียหัวใจ',1000);if(R.hearts<=0){failReel('ปลาดุกระชากสายขาด');return}}}}R.fx-=dt;R.paw-=dt;R.jump-=dt;R.jt-=dt;R.time-=dt;R.clock+=dt;
 if(R.time<=0){failReel('หมดเวลา ปลาดิ้นหลุดไป');return}
@@ -560,7 +565,9 @@ if(trainingStage()>=2&&trainingStage()<5)R.rushCD=Math.max(R.rushCD,3);else R.ru
 if(R.rushCD<=0){R.rush=1.8;R.rushN=0;return}
 R.slow-=dt;
 R.pathBlend=Math.min(1,(R.pathBlend??1)+dt*5);
-R.lx+=R.dir*R.sp*(R.tr==='fast'?1.22:1)*(R.freeze>0?.25:R.slow>0?.58:1)*(hasCombo('สองตาทิพย์')?.85:1)*dt;
+const pull=linePull();
+const resistance=.91+pull.fish*.19-pull.counter*.34;
+R.lx+=R.dir*R.sp*(R.tr==='fast'?1.22:1)*(R.freeze>0?.25:R.slow>0?.58:1)*(hasCombo('สองตาทิพย์')?.85:1)*resistance*dt;
 const end=R.dir*3.35;
 if((R.lx-end)*R.dir>=0){
  R.lx=end;R.dir*=-1;R.pathFrom=R.route;R.route=(R.route+1)%fishingRoutes.length;R.pathBlend=0;R.cs=makeReelRoute();
@@ -706,7 +713,7 @@ function drawReelStatus(){
  cx.fillStyle='#203c53ed';rr(left,top,side,45,13);rr(mid+30,top,side,45,13);
  cx.textAlign='center';cx.font='500 12px Mitr,sans-serif';cx.fillStyle='#fff5df';
  cx.fillText('สายเบ็ด  '+'♥'.repeat(Math.max(0,R.hearts))+'♡'.repeat(Math.max(0,R.maxH-R.hearts)),left+side/2,top+17,side-12);
- cx.fillText('พลังปลา · '+item.n,mid+30+side/2,top+17,side-12);
+ cx.fillText('แรงต้านใต้น้ำ',mid+30+side/2,top+17,side-12);
  const bars=[
   [left+7,cl(R.hearts/R.maxH,0,1),'#f4a8b3'],
   [mid+37,cl(R.hp/R.max,0,1),'#8dd9cb']
@@ -969,6 +976,7 @@ function drawDeckCat(x,y,cat,scale,lift=0){
 }
 function draw(){
 const reeling=mode==='reel',landing=mode==='land';
+const tug=reeling?linePull():{fish:0,counter:0};
 const z=T?Math.min(T.zone,5):1,hz=H*.42;
 cx.save();if(shake>0)cx.translate((Math.random()-.5)*14*shake,(Math.random()-.5)*14*shake);
 if(T)drawSeaFromDeck(z);else drawBG(z,hz);
@@ -1002,7 +1010,7 @@ const sprite=T||fight?null:captainCastSprite(captain,frame);
 if(T){
  const lean=frame===1?-6:frame===2?6:frame===3?9:0;
  const celebrate=landing?Math.sin(Math.PI*cl((LAND.t-.72)/.44,0,1))*7:0;
- drawDeckCat(catX+lean,catY,captain,1,reeling?Math.max(0,R.paw*12):celebrate);
+ drawDeckCat(catX+lean+(tug.fish*4-tug.counter*7),catY,captain,1,reeling?tug.counter*5:celebrate);
 }else if(sprite?.naturalWidth){
  cx.save();
  cx.translate(catX,catY);
@@ -1012,11 +1020,11 @@ if(T){
  cx.restore();
 }else drawPet(catX,catY,captain,fight?.84:kittenScale);
 if(captain)PETPOS.push({x:catX,y:catY-54,id:captain.id});
-const rodAngle=pose.angle+(mode==='bite'?Math.sin(t*27)*.09:0)-(reeling?Math.max(0,R.paw)*1.3:landing?ease(cl(LAND.t/.35,0,1))*.42:0);
-const gripX=catX+pose.grip[0]*kittenScale,gripY=catY+pose.grip[1]*kittenScale;
+const rodAngle=pose.angle+(mode==='bite'?Math.sin(t*27)*.09:0)+(reeling?tug.fish*.22-tug.counter*.49:landing?-ease(cl(LAND.t/.35,0,1))*.42:0);
+const gripX=catX+pose.grip[0]*kittenScale+tug.fish*4-tug.counter*7,gripY=catY+pose.grip[1]*kittenScale-tug.counter*5;
 const tipx=gripX+Math.cos(rodAngle)*67,tipy=gripY+Math.sin(rodAngle)*67;
 if(!fight){
- drawCatRod(gripX,gripY,tipx,tipy,mode==='bite'?12:4);
+ drawCatRod(gripX,gripY,tipx,tipy,mode==='bite'?12:reeling?8+tug.fish*16+tug.counter*9:4);
  blob(()=>cx.ellipse(gripX,gripY,3.8,3,-.3,0,7),captain?TR[captain.a].c:'#e59a4a',0);
 }
 if(!T)drawBoat(bx,by);
@@ -1089,16 +1097,26 @@ else if(reeling||landing){
  }
 }
 const face=R?.dir<0?-1:1;
-const mouth=landing&&item.t==='fish'?18*catchScale*face:0;
+const surfaced=landing&&LAND.t>=catchBreakSurface;
+const mouth=surfaced&&item.t==='fish'?18*catchScale*face:0;
 const lineX=fx+Math.cos(catchTilt)*mouth,lineY=fy+Math.sin(catchTilt)*mouth;
-cx.strokeStyle='#ffffffbd';cx.lineWidth=1.3;cx.beginPath();cx.moveTo(tipx,tipy);
-cx.quadraticCurveTo((tipx+lineX)/2,(tipy+lineY)/2+(reeling||landing?6:28),lineX,lineY);cx.stroke();
+const taut=reeling?cl(tug.fish*.8+tug.counter,0,1):landing?1:0;
+cx.strokeStyle=taut>.7?'#fff2c5df':'#ffffffa3';
+cx.lineWidth=1.15+taut*.55;cx.beginPath();cx.moveTo(tipx,tipy);
+cx.quadraticCurveTo((tipx+lineX)/2,(tipy+lineY)/2+28*(1-taut),lineX,lineY);cx.stroke();
 if(reeling){
  const submergedY=fy+9+Math.sin(t*6)*1.6;
- cx.save();cx.translate(fx,submergedY);cx.scale(face*.58,.58);
- cx.globalAlpha=.52;
- drawCaughtFish(item.t==='fish'?sh(fishArtColor(item),-.29):'#789b9e',Math.sin(t*17)*3,0);
+ cx.save();
+ cx.fillStyle='#153b4c45';cx.beginPath();cx.ellipse(fx,submergedY,15+tug.fish*3,5,.06*face,0,7);cx.fill();
  cx.restore();
+ if(tug.fish>.38){
+  cx.save();cx.globalAlpha=tug.fish*.55;cx.strokeStyle='#d7fff0';cx.lineWidth=1.6;
+  for(let i=0;i<2;i++){
+   const p=(R.clock*(1+tug.fish)+i*.5)%1;
+   cx.beginPath();cx.ellipse(fx,fy,7+p*16,2+p*6,0,0,7);cx.stroke();
+  }
+  cx.restore();
+ }
  cx.save();
  cx.lineCap='round';cx.strokeStyle=onC()?'#ffdc8880':'#b5f4df6b';cx.lineWidth=2.4;
  cx.beginPath();cx.moveTo(fx-face*21,fy+3);cx.quadraticCurveTo(fx-face*10,fy+5,fx,fy);cx.stroke();
@@ -1117,7 +1135,8 @@ if(reeling){
 }
 if(landing){
  cx.save();cx.translate(fx,fy);cx.rotate(catchTilt);cx.scale(item.t==='fish'?face*catchScale:catchScale,catchScale);cx.globalAlpha=catchOpacity;
- if(item.t==='fish')drawCaughtFish(fishArtColor(item),Math.sin(LAND.t*23)*4,0);
+ if(!surfaced){cx.fillStyle='#153b4c77';cx.beginPath();cx.ellipse(0,0,24,8,0,0,7);cx.fill()}
+ else if(item.t==='fish')drawCaughtFish(fishArtColor(item),Math.sin(LAND.t*23)*4,0);
  else if(item.t==='amber'){cx.fillStyle='#ffc47b';cx.beginPath();cx.ellipse(0,0,9,12,.2,0,7);cx.fill()}
  else if(item.t==='chest'){cx.fillStyle='#b97950';rr(-13,-8,26,16,4);cx.fillStyle='#ffce77';rr(-2,-3,4,6,1)}
  else drawCaughtFish('#a6b6af',0,0);
