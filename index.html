@@ -76,7 +76,7 @@ button.wait{position:relative;overflow:hidden;opacity:1;background:#d9cbb2;box-s
 .game-version{position:fixed;right:max(10px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));z-index:2;pointer-events:none;padding:3px 8px;border-radius:12px;background:#142b38e6;color:#fff;font:12px/1.4 Sarabun,system-ui,sans-serif}
 body{overflow:hidden;overscroll-behavior:none}
 </style></head><body>
-<div class="game-version">Nekofish · เวอร์ชันทดลอง 9</div>
+<div class="game-version">Nekofish · เวอร์ชันทดลอง 10</div>
 <div class="fig" id="fig"><canvas id="cv"></canvas><div id="toast"></div></div>
 <div id="modal"><div class="mbox" id="mbox"></div></div>
 <script>
@@ -144,17 +144,17 @@ return{id:Date.now().toString(36)+ri(1e6).toString(36),n:CH[a].n,a,b:-1,rar:gold
 
 function accSVG(k){return k==='tabby'?`<g fill="#b8640f" opacity=".7"><path d="M44 26 l6 10 6-10z"/><path d="M30 34 l8 6 -9 2z"/><path d="M70 34 l-8 6 9 2z"/></g>`:k==='lantern'?`<line x1="80" y1="60" x2="90" y2="40" stroke="#4a2f1b" stroke-width="3"/><rect x="83" y="62" width="14" height="18" rx="3" fill="#ffd84a" stroke="#b8640f"/><circle cx="90" cy="71" r="10" fill="#ffd84a" opacity=".35"/>`:k==='mist'?`<g fill="#fff" opacity=".8"><circle cx="20" cy="20" r="5"/><circle cx="28" cy="16" r="4"/><circle cx="80" cy="18" r="5"/><circle cx="72" cy="13" r="3.5"/></g><circle cx="50" cy="24" r="4" fill="#fff" stroke="#c9c3e6"/>`:k==='coin'?`<path d="M26 78 Q50 88 74 78" stroke="#d6304e" stroke-width="5" fill="none"/><circle cx="50" cy="87" r="8" fill="#e8c547" stroke="#a87a10" stroke-width="2"/><text x="50" y="91" font-size="10" text-anchor="middle" fill="#a87a10" font-family="Mitr">฿</text>`:k==='crown'?`<path d="M30 26 L34 8 L42 20 L50 4 L58 20 L66 8 L70 26Z" fill="#e8c547" stroke="#a87a10" stroke-width="1.5"/><circle cx="50" cy="16" r="3" fill="#d6304e"/><circle cx="38" cy="20" r="2" fill="#3a86d9"/><circle cx="62" cy="20" r="2" fill="#3a86d9"/>`:k==='pearl'?`<g fill="#fff" stroke="#0002">${[0,1,2,3,4,5,6].map(i=>`<circle cx="${32+i*6}" cy="${80-Math.sin(i/6*Math.PI)*-4}" r="3"/>`).join('')}</g>`:k==='bandana'?`<path d="M18 30 Q50 14 82 30 L80 38 Q50 26 20 38Z" fill="#d6304e"/><path d="M80 32 L94 26 L90 38Z" fill="#d6304e"/><circle cx="30" cy="31" r="1.6" fill="#fff"/><circle cx="46" cy="25" r="1.6" fill="#fff"/><circle cx="64" cy="26" r="1.6" fill="#fff"/>`:k==='bell'?`<path d="M26 78 Q50 88 74 78" stroke="#2f86c9" stroke-width="5" fill="none"/><circle cx="50" cy="86" r="6" fill="#e8c547" stroke="#a87a10"/><rect x="47" y="86" width="6" height="2" fill="#a87a10"/>`:k==='scarf'?`<path d="M24 76 Q50 90 76 76 L74 84 Q50 96 26 84Z" fill="#7a4ab8"/><path d="M70 82 L86 96 L76 98 L66 86Z" fill="#7a4ab8"/>`:`<ellipse cx="50" cy="26" rx="22" ry="6" fill="#fff" stroke="#0002"/><path d="M33 26 Q50 4 67 26Z" fill="#fff" stroke="#0002"/><rect x="34" y="20" width="32" height="5" fill="#2f5d8a"/><path d="M50 13 l2 3 3 0 -2 2 1 3 -4 -2 -4 2 1 -3 -2 -2 3 0z" fill="#e8c547"/>`}
 function catSVG(c){
-const {c:fur,p:points}=TR[c.a],{eyes,acc}=CH[c.a];
+const {c:fur,p:points}=TR[c.a],{acc}=CH[c.a];
 return `<svg viewBox="0 0 100 100" aria-hidden="true">
 <circle cx="50" cy="51" r="44" fill="#e0f4ee"/>
-<path d="M22 46 Q14 13 23 14 Q34 14 43 29 H57 Q67 14 77 14 Q86 13 78 46" fill="${points||fur}" stroke="#533d3d" stroke-width="2.5"/>
+<path d="M22 46 Q14 13 23 14 Q34 14 43 29 H57 Q67 14 77 14 Q86 13 78 46" fill="${points||fur}"/>
 <path d="M25 35 Q21 19 27 22 Q34 24 37 32 M75 35 Q79 19 73 22 Q66 24 63 32" fill="#f7a4ae"/>
-<ellipse cx="50" cy="56" rx="35" ry="29" fill="${fur}" stroke="#533d3d" stroke-width="2.5"/>
+<ellipse cx="50" cy="56" rx="35" ry="29" fill="${fur}"/>
 <ellipse cx="50" cy="68" rx="19" ry="11" fill="${points||'#fff4dd'}" opacity=".55"/>
-${eyes.map((color,i)=>{const x=36+i*28;return `<ellipse cx="${x}" cy="54" rx="6.5" ry="8" fill="#30273a"/><ellipse cx="${x}" cy="57" rx="4.2" ry="3.2" fill="${color}"/><circle cx="${x-2}" cy="51" r="2.4" fill="#fff"/>`}).join('')}
+<g fill="${fur==='#2a2a33'?'#fff2de':'#3a2e38'}"><circle cx="37" cy="55" r="3.3"/><circle cx="63" cy="55" r="3.3"/></g>
 <ellipse cx="26" cy="65" rx="6" ry="3" fill="#ef879d" opacity=".65"/><ellipse cx="74" cy="65" rx="6" ry="3" fill="#ef879d" opacity=".65"/>
 <path d="M47 63 Q50 60 53 63 L50 66Z" fill="#ce7187"/>
-<path d="M44 68 Q47 72 50 66 Q53 72 56 68 M16 63 L23 65 M17 70 L23 69 M84 63 L77 65 M83 70 L77 69" fill="none" stroke="#533d3d" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M44 68 Q47 72 50 66 Q53 72 56 68" fill="none" stroke="#533d3d" stroke-width="1.5" stroke-linecap="round"/>
 ${accSVG(acc)}</svg>`}
 
 const cardHTML=c=>{const i=S.crew.indexOf(c.id),ch=CH[c.a];
@@ -358,10 +358,10 @@ const cxp=W/2,cyp=H*.9;
 const tipX=cxp+44+(lx-cxp)*.3,tipY=H*.56+Math.sin(t*20)*1.5*(1+R.d);
 {const pets=crewCards().slice(1,3);pets.forEach((c,i)=>{const px=i?cxp+72:cxp-72,py=cyp+34,c1=TR[c.a].c,c2=c.b>=0?TR[c.b].c:c1,ol=sh(c1==='#2a2a33'?'#55556a':c1,-.45),k=.62;cx.save();cx.translate(px,py);cx.scale(k,c.hungry?k*.8:k);
 cx.fillStyle='#00000030';cx.beginPath();cx.ellipse(0,26,30,7,0,0,7);cx.fill();
-cx.lineCap='round';cx.beginPath();cx.moveTo(-10,14);cx.quadraticCurveTo(-42,8,-36+Math.sin(t*2.5+i)*6,-24);cx.strokeStyle=OL;cx.lineWidth=11;cx.stroke();cx.strokeStyle=c1;cx.lineWidth=7.5;cx.stroke();
-const bd=()=>cx.ellipse(0,-6,25,30,0,0,7);blob(bd,c1,2.6);shade(bd,()=>cx.ellipse(16,-2,16,34,0,0,7),sh(c1==='#2a2a33'?'#55556a':c1,-.22));
-for(const s2 of[-1,1]){blob(()=>{cx.moveTo(s2*17,-54);cx.lineTo(s2*15,-77);cx.lineTo(s2*3,-63);cx.closePath()},c1,2.4)}
-blob(()=>cx.arc(0,-48,19,0,7),c1,2.6);cx.fillStyle='#ffffff26';cx.beginPath();cx.ellipse(-7,-58,6,4,-.4,0,7);cx.fill();
+cx.lineCap='round';cx.beginPath();cx.moveTo(-10,14);cx.quadraticCurveTo(-42,8,-36+Math.sin(t*2.5+i)*6,-24);cx.strokeStyle=sh(c1,-.17);cx.lineWidth=8;cx.stroke();
+const bd=()=>cx.ellipse(0,-6,25,30,0,0,7);blob(bd,c1,0);shade(bd,()=>cx.ellipse(16,-2,16,34,0,0,7),sh(c1==='#2a2a33'?'#55556a':c1,-.22));
+for(const s2 of[-1,1]){blob(()=>{cx.moveTo(s2*17,-54);cx.lineTo(s2*15,-77);cx.lineTo(s2*3,-63);cx.closePath()},c1,0)}
+blob(()=>cx.arc(0,-48,19,0,7),c1,0);cx.fillStyle='#ffffff26';cx.beginPath();cx.ellipse(-7,-58,6,4,-.4,0,7);cx.fill();
 {const k=CH[c.a].acc;if(k==='bandana'){cx.fillStyle='#d6304e';cx.beginPath();cx.ellipse(0,-60,19,7,0,Math.PI,0);cx.fill();cx.beginPath();cx.moveTo(-4,-58);cx.lineTo(-10+Math.sin(t*6)*3,-40);cx.lineTo(2,-44);cx.fill()}
 else if(k==='hat'){cx.fillStyle='#fff';cx.beginPath();cx.ellipse(0,-64,20,5,0,0,7);cx.fill();cx.beginPath();cx.ellipse(0,-67,13,9,0,Math.PI,0);cx.fill();cx.fillStyle='#2f5d8a';cx.fillRect(-13,-70,26,4)}
 else if(k==='scarf'){cx.fillStyle='#7a4ab8';cx.fillRect(-17,-34,34,7);cx.beginPath();cx.moveTo(6,-30);cx.lineTo(14+Math.sin(t*5)*4,-6);cx.lineTo(4,-8);cx.fill()}
@@ -388,13 +388,13 @@ const catX=cxp+shift,catY=Math.min(H-12,cyp+24)+bend*.22;
 const gripX=catX+23,gripY=catY-21-brace*12;
 drawPet(catX,catY,captain,1.35);
 drawCatRod(gripX,gripY,tX,tY,brace*17);
-blob(()=>cx.ellipse(gripX,gripY,6,5,-.45,0,7),fur,1.5);
+blob(()=>cx.ellipse(gripX,gripY,6,5,-.45,0,7),fur,0);
 if(cheer){
  const lift=ease(cl((LAND.t-1.05)/.23,0,1));
  const pawX=catX+4-lift*13,pawY=catY-15-lift*21;
- cx.strokeStyle=OL;cx.lineWidth=9;cx.lineCap='round';cx.beginPath();cx.moveTo(catX+6,catY-13);cx.lineTo(pawX,pawY);cx.stroke();
+ cx.lineCap='round';cx.beginPath();cx.moveTo(catX+6,catY-13);cx.lineTo(pawX,pawY);
  cx.strokeStyle=fur;cx.lineWidth=6;cx.stroke();
- blob(()=>cx.ellipse(pawX,pawY,5,5,0,0,7),fur,1.3);
+ blob(()=>cx.ellipse(pawX,pawY,5,5,0,0,7),fur,0);
 }
 if(R.freeze>0&&!ld){cx.fillStyle='rgba(200,235,255,.22)';cx.fillRect(0,0,W,H)}if(R.midas>0&&!ld){cx.fillStyle='rgba(255,215,90,.14)';cx.fillRect(0,0,W,H)}if(R.power>0&&!ld){cx.fillStyle='rgba(80,160,255,'+(.08+Math.sin(t*10)*.04)+')';cx.fillRect(0,0,W,H)}
 if(R.slow>0&&!ld){cx.fillStyle='rgba(120,180,255,'+(.12+Math.sin(t*4)*.03)+')';cx.fillRect(0,0,W,H)}
@@ -522,25 +522,26 @@ function catShape(x,y,L,stand,mono){
 const c1=mono||(L?TR[L.a].c:'#e59a4a'),pt=!mono&&L&&TR[L.a].p,dk=sh(c1==='#2a2a33'?'#55556a':c1,-.25),lt=sh(c1,.3);
 if(mono){cx.fillStyle=mono;cx.beginPath();cx.ellipse(x,y-16,22,15,0,0,7);cx.arc(x+12,y-38,13,0,7);cx.fill();return}
 cx.fillStyle='#00000030';cx.beginPath();cx.ellipse(x,y,22,4,0,0,7);cx.fill();
-const tw=Math.sin(t*2.6+x)*6;cx.lineCap='round';cx.beginPath();cx.moveTo(x-16,y-8);cx.bezierCurveTo(x-40,y-6,x-40+tw,y-34,x-28+tw,y-44);cx.strokeStyle=OL;cx.lineWidth=9;cx.stroke();cx.strokeStyle=c1;cx.lineWidth=6;cx.stroke();
-const bod=()=>cx.ellipse(x,y-15,22,15,0,0,7);blob(bod,c1);shade(bod,()=>cx.ellipse(x-10,y-4,22,12,0,0,7),dk);
+const tw=Math.sin(t*2.6+x)*6;cx.lineCap='round';cx.beginPath();cx.moveTo(x-16,y-8);cx.bezierCurveTo(x-40,y-6,x-40+tw,y-34,x-28+tw,y-44);cx.strokeStyle=dk;cx.lineWidth=7;cx.stroke();
+const bod=()=>cx.ellipse(x,y-15,22,15,0,0,7);blob(bod,c1,0);shade(bod,()=>cx.ellipse(x-10,y-4,22,12,0,0,7),dk);
 cx.fillStyle=lt;cx.beginPath();cx.ellipse(x+10,y-12,8,7,0,0,7);cx.fill();
-blob(()=>cx.ellipse(x+6,y-2,5,3.6,0,0,7),c1,1.8);blob(()=>cx.ellipse(x+16,y-2,5,3.6,0,0,7),c1,1.8);
+blob(()=>cx.ellipse(x+6,y-2,5,3.6,0,0,7),c1,0);blob(()=>cx.ellipse(x+16,y-2,5,3.6,0,0,7),c1,0);
 const hx=x+11,hy=y-38+Math.sin(t*2.6+x)*1.4;
-for(const s2 of[-1,1]){blob(()=>{cx.moveTo(hx+s2*12,hy-3);cx.quadraticCurveTo(hx+s2*15,hy-24,hx+s2*9,hy-19);cx.lineTo(hx+s2*1,hy-10);cx.closePath()},pt||c1,1.8);cx.fillStyle='#f2a5b3';cx.beginPath();cx.moveTo(hx+s2*10,hy-6);cx.lineTo(hx+s2*9.5,hy-16);cx.lineTo(hx+s2*4,hy-10);cx.fill()}
-blob(()=>cx.ellipse(hx,hy,16,13.5,0,0,7),c1);
+for(const s2 of[-1,1]){blob(()=>{cx.moveTo(hx+s2*12,hy-3);cx.quadraticCurveTo(hx+s2*15,hy-24,hx+s2*9,hy-19);cx.lineTo(hx+s2*1,hy-10);cx.closePath()},pt||c1,0);cx.fillStyle='#f2a5b3';cx.beginPath();cx.moveTo(hx+s2*10,hy-6);cx.lineTo(hx+s2*9.5,hy-16);cx.lineTo(hx+s2*4,hy-10);cx.fill()}
+blob(()=>cx.ellipse(hx,hy,16,13.5,0,0,7),c1,0);
 if(pt){cx.fillStyle=pt;cx.globalAlpha=.35;cx.beginPath();cx.ellipse(hx+1,hy+4,7,5,0,0,7);cx.fill();cx.globalAlpha=1}
-{const eyes=L?CH[L.a].eyes:['#99613d','#99613d'];const bl=(t+x*.01)%4<.12;for(const[i,ex]of[[0,hx-5],[1,hx+6]]){if(bl){cx.strokeStyle=OL;cx.lineWidth=1.6;cx.beginPath();cx.moveTo(ex-2.5,hy-1);cx.lineTo(ex+2.5,hy-1);cx.stroke();continue}cx.fillStyle=eyes[i];cx.beginPath();cx.ellipse(ex,hy-1,3.4,4.3,0,0,7);cx.fill();cx.fillStyle='#111';cx.beginPath();cx.ellipse(ex,hy-1,1.7,2.6,0,0,7);cx.fill();cx.fillStyle='#fff';cx.beginPath();cx.arc(ex+.9,hy-2.8,1.2,0,7);cx.fill()}}
+const blink=(t+x*.01)%4<.12;
+const dot=c1==='#2a2a33'?'#fff2de':'#3a2e38';
+for(const ex of [hx-5,hx+6])blob(()=>cx.ellipse(ex,hy-1,1.55,blink?.5:1.55,0,0,7),dot,0);
 cx.fillStyle='#ff8fa366';cx.beginPath();cx.ellipse(hx-8,hy+4,2.8,1.7,0,0,7);cx.ellipse(hx+9,hy+4,2.8,1.7,0,0,7);cx.fill();
 cx.fillStyle='#e58a9a';cx.beginPath();cx.ellipse(hx+.5,hy+3,1.5,1.1,0,0,7);cx.fill();
 cx.strokeStyle=OL;cx.lineWidth=1.1;cx.beginPath();cx.moveTo(hx-1.8,hy+5.3);cx.quadraticCurveTo(hx-.6,hy+6.8,hx+.5,hy+5.3);cx.quadraticCurveTo(hx+1.6,hy+6.8,hx+2.8,hy+5.3);cx.stroke();
-cx.strokeStyle='#ffffffaa';cx.lineWidth=.8;cx.beginPath();for(const s2 of[-1,1])for(const d of[-1,1]){cx.moveTo(hx+s2*8,hy+4);cx.lineTo(hx+s2*19,hy+2+d*3)}cx.stroke();
 if(L)drawAcc(CH[L.a].acc,hx,hy,x,y)}
 let PA={swing:0,crouch:0},PETPOS=[],BUB=null,bubT=4;
 function say(c,txt,dur){BUB={id:c.id,txt,t:dur||3}}
 function drawBubble(){if(!BUB||BUB.t<=0||$('#toast').classList.contains('on'))return;const p=PETPOS.find(q=>q.id===BUB.id);if(!p)return;cx.font='500 14px Mitr,sans-serif';cx.textAlign='center';const w=cx.measureText(BUB.txt).width+20,x=cl(p.x,w/2+6,W-w/2-6),y=p.y-30;cx.globalAlpha=Math.min(1,BUB.t*3);cx.fillStyle='#fffaf0';rr(x-w/2,y-16,w,28,12);cx.beginPath();cx.moveTo(p.x-5,y+11);cx.lineTo(p.x,y+19);cx.lineTo(p.x+5,y+11);cx.fill();cx.fillStyle='#1d2a30';cx.fillText(BUB.txt,x,y+3);cx.globalAlpha=1}
 const OL='#2a1d18';
-function blob(fn,col,w){cx.beginPath();fn();cx.fillStyle=col;cx.fill();cx.strokeStyle=OL;cx.lineWidth=w||2.2;cx.lineJoin='round';cx.stroke()}
+function blob(fn,col,w=2.2){cx.beginPath();fn();cx.fillStyle=col;cx.fill();if(w>0){cx.strokeStyle=OL;cx.lineWidth=w;cx.lineJoin='round';cx.stroke()}}
 function shade(fn,clipFn,col){cx.save();cx.beginPath();fn();cx.clip();cx.beginPath();clipFn();cx.fillStyle=col;cx.fill();cx.restore()}
 function drawCatRod(gripX,gripY,tipX,tipY,bend){
  cx.lineCap='round';cx.beginPath();cx.moveTo(gripX-7,gripY+6);cx.lineTo(gripX,gripY);
@@ -575,7 +576,7 @@ const gripX=catX+19,gripY=catY-17;
 const tipx=gripX+Math.cos(rodAngle)*67,tipy=gripY+Math.sin(rodAngle)*67;
 if(!fight){
  drawCatRod(gripX,gripY,tipx,tipy,mode==='bite'?12:4);
- blob(()=>cx.ellipse(gripX,gripY,4.8,4,-.3,0,7),captain?TR[captain.a].c:'#e59a4a',1.3);
+ blob(()=>cx.ellipse(gripX,gripY,4.8,4,-.3,0,7),captain?TR[captain.a].c:'#e59a4a',0);
 }
 drawBoat(bx,by);
 
