@@ -132,17 +132,26 @@ body[data-mode=reel] .game-version{display:none}
 .quest-coin{display:grid;place-items:center;width:25px;height:25px;border-radius:50%;background:#ffd285;color:#745030;font-weight:700}
 .quest-detail button.quest-claim{background:#ffc47b;color:#442c22;font-weight:600}
 .quest-detail details summary{cursor:pointer;font-size:13px}
-#questQuick{position:fixed;z-index:3;top:max(47px,calc(env(safe-area-inset-top) + 43px));left:50%;transform:translateX(-50%);display:flex;gap:4px;width:min(410px,calc(100% - 18px))}
-body[data-mode=idle] #questQuick{top:max(73px,calc(env(safe-area-inset-top) + 66px))}
-@media(max-height:430px) and (min-width:580px){#questQuick{top:5px;width:min(340px,calc(100% - 320px))}}
+#questQuick{position:fixed;z-index:3;top:max(46px,calc(env(safe-area-inset-top) + 39px));right:max(8px,env(safe-area-inset-right));width:min(205px,43vw);padding:5px;background:linear-gradient(145deg,#204255f2,#182f45e8);border:1px solid #9dccbe55;border-radius:13px;box-shadow:0 3px 10px #0a24383d;color:#fff3d3;animation:quest-slide .24s ease-out}
+body[data-mode=idle] #questQuick{top:max(74px,calc(env(safe-area-inset-top) + 66px))}
 #questQuick[hidden],body:has(#modal.on) #questQuick{display:none}
-#questQuick button{flex:1;min-height:40px;padding:4px 3px;white-space:nowrap;font:500 clamp(10px,2.8vw,13px) Mitr,sans-serif;color:#fff3d3;background:#203c53eb;border-radius:11px;box-shadow:inset 0 -2px 0 var(--quest-accent)}
-#questQuick button[aria-label*="รับรางวัลได้"]{background:#ffc47b;color:#443220}
+#questQuick button{width:100%;margin:0;min-height:35px;padding:4px 6px;text-align:left;font:500 clamp(11px,2.8vw,13px) Mitr,sans-serif;color:inherit;background:transparent;box-shadow:none;border-radius:7px}
+#questQuick .quest-toggle{display:flex;justify-content:space-between;align-items:center;gap:5px;color:#ffe2a5}
+#questQuick .quest-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px;border-left:2px solid var(--quest-accent);margin-top:2px;background:#d6f0e615}
+.quest-row span:first-child{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.quest-row span:last-child{font-variant-numeric:tabular-nums}
+#questQuick .quest-row[data-ready]{background:#ffc47b;color:#443220}
+#questQuick:has(.quest-toggle[aria-expanded=false]){width:108px}
+@keyframes quest-slide{from{opacity:0;transform:translateX(10px)}}
+@media(prefers-reduced-motion:reduce){#questQuick{animation:none}}
 </style></head><body>
-<div class="game-version">Nekofish · เวอร์ชันทดลอง 37</div>
+<div class="game-version">Nekofish · เวอร์ชันทดลอง 38</div>
 <div class="fig" id="fig"><canvas id="cv"></canvas><div id="toast"></div></div>
 <span id="voyageCatch" hidden></span>
-<nav id="questQuick" aria-label="ภารกิจในหน้าเกม" hidden></nav>
+<aside id="questQuick" aria-label="ภารกิจในหน้าเกม" hidden>
+ <button type="button" class="quest-toggle" id="questToggle" aria-expanded="true" aria-controls="questRows">ภารกิจ <span aria-hidden="true">−</span></button>
+ <div id="questRows"></div>
+</aside>
 <div id="trainingHUD" aria-live="polite" hidden></div>
 <div id="modal"><div class="mbox" id="mbox"></div></div>
 <script>
@@ -361,21 +370,27 @@ const questTypes={
  daily:{label:'รายวัน',icon:'☀'}
 };
 let questTab='main';
-const questQuick=$('#questQuick');
+const questQuick=$('#questQuick'),questRows=$('#questRows'),questToggle=$('#questToggle');
 function refreshQuestQuick(){
  questQuick.hidden=mode!=='port'&&mode!=='idle';
  if(questQuick.hidden)return;
  const main=cl(trainingStage(),0,trainingSteps.length),side=collectionQuest(),daily=dailyFishing();
  const entries=[
-  ['main','หลัก',main,trainingSteps.length,!!S.fishingTraining?.claimed],
-  ['side','รอง',side.count,side.target,side.claimed],
-  ['daily','รายวัน',daily.count,3,daily.claimed]
+  ['main','ออกเรือครั้งแรก',main,trainingSteps.length,!!S.fishingTraining?.claimed],
+  ['side','นักสะสมปลา',side.count,side.target,side.claimed],
+  ['daily','จับปลารายวัน',daily.count,3,daily.claimed]
  ];
- questQuick.innerHTML=entries.map(([key,label,count,target,claimed])=>{
+ questRows.innerHTML=entries.map(([key,label,count,target,claimed])=>{
   const progress=Math.min(count,target)+'/'+target,ready=count>=target&&!claimed;
-  return `<button type="button" class="quest-${key}" data-quick-quest="${key}" aria-label="${questTypes[key].label} ${progress}${ready?' รับรางวัลได้':''}">${questTypes[key].icon} ${label} ${claimed?'✓':progress}${ready?' •':''}</button>`;
+  return `<button type="button" class="quest-row quest-${key}" data-quick-quest="${key}" ${ready?'data-ready':''} aria-label="${questTypes[key].label} ${label} ${progress}${ready?' รับรางวัลได้':''}"><span>${questTypes[key].icon} ${label}</span><span>${claimed?'✓':progress}</span></button>`;
  }).join('');
 }
+questToggle.addEventListener('click',()=>{
+ const expanded=questToggle.getAttribute('aria-expanded')==='true';
+ questToggle.setAttribute('aria-expanded',String(!expanded));
+ questToggle.querySelector('span').textContent=expanded?'+':'−';
+ questRows.hidden=expanded;
+});
 questQuick.addEventListener('click',e=>{
  const key=e.target.closest('[data-quick-quest]')?.dataset.quickQuest;
  if(!key||modal.classList.contains('on')||(mode!=='port'&&mode!=='idle'))return;
