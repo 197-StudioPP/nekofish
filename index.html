@@ -59,9 +59,12 @@ h2{font-size:22px;line-height:1.2;margin:0 0 10px}
 .hint{color:var(--mut);font-size:14px;margin:8px 2px}
 .perks{display:grid;gap:6px;font-size:15px}
 .perks b{font-family:Mitr;font-weight:500}
-#modal{position:fixed;inset:0;background:rgba(6,12,16,.8);display:none;align-items:center;justify-content:center;z-index:10;padding:20px}
+#modal{position:fixed;inset:0;background:#172e3eb8;backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:10;padding:clamp(10px,3vw,24px)}
 #modal.on{display:flex}
-.mbox{background:var(--bg);border-radius:20px;padding:18px;max-width:520px;max-height:86vh;overflow:auto;width:100%;text-align:center;display:grid;gap:10px}
+.mbox{background:linear-gradient(155deg,var(--card),var(--bg));border:1px solid var(--line);border-radius:24px;padding:clamp(12px,4vw,22px);max-width:490px;max-height:calc(100dvh - 32px);overflow:auto;width:100%;text-align:center;display:grid;gap:9px;box-shadow:0 18px 56px #10263865;overscroll-behavior:contain}
+.mbox button{min-height:44px}
+.mbox button.main{min-height:52px}
+.mbox .hint{margin:2px 0}
 .mbox h2{margin:0}
 #amber{width:210px;height:210px;margin:0 auto;cursor:pointer;touch-action:manipulation}
 .knock{animation:knock .18s}
@@ -94,7 +97,7 @@ body{overflow:hidden;overscroll-behavior:none}
 @keyframes tank-drift{to{transform:translate(17px,-6px)}}
 @media(prefers-reduced-motion:reduce){.tank-fish{animation:none}}
 </style></head><body>
-<div class="game-version">Nekofish · เวอร์ชันทดลอง 27</div>
+<div class="game-version">Nekofish · เวอร์ชันทดลอง 28</div>
 <div class="fig" id="fig"><canvas id="cv"></canvas><div id="toast"></div></div>
 <span id="voyageCatch" hidden></span>
 <div id="modal"><div class="mbox" id="mbox"></div></div>
@@ -793,7 +796,7 @@ const reeling=mode==='reel',landing=mode==='land';
 const z=T?Math.min(T.zone,5):1,hz=H*.42;
 cx.save();if(shake>0)cx.translate((Math.random()-.5)*14*shake,(Math.random()-.5)*14*shake);
 if(T)drawSeaFromDeck(z);else drawBG(z,hz);
-const py=hz+(H-hz)*.2,bx=T?Math.max(78,W*.31):W*.5;
+const py=hz+(H-hz)*.2+Math.min(22,H*.035),bx=T?Math.max(78,W*.31):W*.5;
 const by=(T?H*.81:hz+(H-hz)*.62)+Math.sin(t*1.6)*2;
 const fishingX=W*.69,fishingY=H*.39;
 SP=[];
@@ -934,28 +937,44 @@ cx.fillStyle='#ffd27a';cx.strokeStyle='#08141b';cx.lineWidth=2;cx.beginPath();cx
 function banner(m,hot,yy){const sc=hot?1+Math.abs(Math.sin(t*4))*.035:1;cx.save();cx.translate(W/2,yy||(T?H*.58:Math.min(H*.46,H-145)));cx.scale(sc,sc);cx.font='600 19px Mitr,sans-serif';cx.textAlign='center';const w=Math.min(W-24,cx.measureText(m).width+36);cx.fillStyle=hot?'#943d58':'#254956';rr(-w/2,-24,w,44,22);cx.fillStyle='#fff';cx.fillText(m,0,5,Math.max(1,w-16));cx.restore()}
 function glow(x,y,r){const g=cx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,'#ffd27aaa');g.addColorStop(1,'#ffd27a00');cx.globalAlpha=.55+.45*Math.sin(t*4);cx.fillStyle=g;cx.beginPath();cx.arc(x,y,r,0,7);cx.fill();cx.globalAlpha=1}
 function badge(n,x,y){if(!n)return;cx.font='700 12px Mitr,sans-serif';cx.textAlign='center';const w=Math.max(18,cx.measureText(n).width+10);cx.fillStyle='#d6304e';rr(x-w/2,y-9,w,18,9);cx.fillStyle='#fff';cx.fillText(n,x,y+4)}
-function drawPort(bx,by,py){const top=py,[rx,fbx,sx0,ax,hx,ox]=[.08,.25,.43,.61,.79,.94].map(f=>W*f);
-for(let x=6;x<W;x+=30){cx.fillStyle='#3e2715';cx.fillRect(x,top+8,8,46);cx.fillStyle='#5a3a22';cx.fillRect(x,top+8,3,46);cx.fillStyle='#ffffff22';cx.fillRect(x-3,top+54,14,2)}
-cx.fillStyle='#8a5a34';cx.beginPath();cx.moveTo(-10,top);cx.lineTo(W+10,top);cx.lineTo(W+10,top-16);cx.lineTo(-10,top-16);cx.fill();
-cx.strokeStyle='#00000028';cx.lineWidth=1.2;for(let x=10;x<W;x+=20){cx.beginPath();cx.moveTo(x,top);cx.lineTo(x+8,top-16);cx.stroke()}
-cx.fillStyle='#5a3a22';cx.fillRect(-10,top,W+20,9);
-// The aquarium and notice board sit behind the objects on the dock.
-const shelfY=Math.max(42,top-118),tankX=W*.29,noticeX=W*.69;
-cx.fillStyle='#91d3c7';rr(tankX-22,shelfY-15,44,29,8);
-cx.fillStyle='#e3f5dd';rr(tankX-19,shelfY-13,38,4,2);
-cx.fillStyle='#eaa95f';cx.beginPath();cx.ellipse(tankX+3,shelfY,8,4,0,0,7);
-cx.moveTo(tankX-4,shelfY);cx.lineTo(tankX-11,shelfY-4);cx.lineTo(tankX-11,shelfY+4);cx.fill();
-lblS('ตู้ปลา',tankX,shelfY+27);hitR(tankX-27,shelfY-22,54,53,'aquarium');
-cx.fillStyle='#9e7050';rr(noticeX-20,shelfY-17,40,32,5);
-cx.fillStyle='#ffebbc';rr(noticeX-13,shelfY-12,26,22,3);
-cx.fillStyle='#8b684f';for(let i=0;i<3;i++)rr(noticeX-8,shelfY-7+i*5,13+i%2*3,2,1);
-const task=S.dailyFishing;
-if(task?.count>=3&&!task.claimed)badge('!',noticeX+20,shelfY-18);
-lblS('ภารกิจ',noticeX,shelfY+27);hitR(noticeX-26,shelfY-24,52,55,'quest');
+function drawDockWalk(x,y,width){
+ const left=x-width/2,right=x+width/2;
+ cx.fillStyle='#6a75635a';rr(left-7,y+18,width+14,15,7);
+ for(let peg=left+18;peg<right-6;peg+=32){
+  cx.fillStyle='#8a614d';rr(peg,y+2,7,29,3);
+ }
+ cx.fillStyle='#8c614c';rr(left,y-10,width,21,7);
+ cx.fillStyle='#c7956b';rr(left,y-13,width,16,6);
+ cx.strokeStyle='#91664958';cx.lineWidth=1;
+ cx.beginPath();
+ for(let peg=left+17;peg<right-8;peg+=19){cx.moveTo(peg,y-12);cx.lineTo(peg-3,y+2)}
+ cx.stroke();
+ cx.strokeStyle='#f6d4a37d';cx.beginPath();cx.moveTo(left+8,y-12);cx.lineTo(right-8,y-12);cx.stroke();
+}
+function drawPort(bx,by,py){
+ const top=py,upper=top-Math.min(103,H*.27);
+ const dockWidth=Math.min(W-16,660),left=(W-dockWidth)/2;
+ const slot=index=>left+dockWidth*(index+.5)/4;
+ const [rx,tankX,noticeX,ox]=[0,1,2,3].map(slot);
+ const [fbx,sx0,ax,hx]=[0,1,2,3].map(slot);
+ drawDockWalk(W/2,upper,dockWidth);
+ drawDockWalk(W/2,top,dockWidth);
+ const shelfY=upper-26;
+ cx.fillStyle='#91d3c7';rr(tankX-22,shelfY-15,44,29,8);
+ cx.fillStyle='#e3f5dd';rr(tankX-19,shelfY-13,38,4,2);
+ cx.fillStyle='#eaa95f';cx.beginPath();cx.ellipse(tankX+3,shelfY,8,4,0,0,7);
+ cx.moveTo(tankX-4,shelfY);cx.lineTo(tankX-11,shelfY-4);cx.lineTo(tankX-11,shelfY+4);cx.fill();
+ lblS('ตู้ปลา',tankX,shelfY+24);hitR(tankX-25,shelfY-20,50,49,'aquarium');
+ cx.fillStyle='#9e7050';rr(noticeX-20,shelfY-17,40,32,5);
+ cx.fillStyle='#ffebbc';rr(noticeX-13,shelfY-12,26,22,3);
+ cx.fillStyle='#8b684f';for(let i=0;i<3;i++)rr(noticeX-8,shelfY-7+i*5,13+i%2*3,2,1);
+ const task=S.dailyFishing;
+ if(task?.count>=3&&!task.claimed)badge('!',noticeX+20,shelfY-18);
+ lblS('ภารกิจ',noticeX,shelfY+24);hitR(noticeX-24,shelfY-22,48,51,'quest');
 // rod rack
-cube(rx-16,top-78,5,72,4,'#5a3a22');cube(rx+11,top-78,5,72,4,'#5a3a22');cube(rx-18,top-68,36,4,4,'#6b4428');
-cx.strokeStyle='#d8c49a';cx.lineWidth=2;for(let i=0;i<Math.min(S.rod,6);i++){cx.beginPath();cx.moveTo(rx-12+i*5,top-8);cx.lineTo(rx-4+i*5,top-94);cx.stroke()}
-hitR(rx-26,top-96,52,104,'rod');
+cube(rx-16,upper-50,5,44,4,'#5a3a22');cube(rx+11,upper-50,5,44,4,'#5a3a22');cube(rx-18,upper-41,36,4,4,'#6b4428');
+cx.strokeStyle='#d8c49a';cx.lineWidth=2;for(let i=0;i<Math.min(S.rod,6);i++){cx.beginPath();cx.moveTo(rx-12+i*5,upper-8);cx.lineTo(rx-4+i*5,upper-57);cx.stroke()}
+hitR(rx-24,upper-65,48,69,'rod');
 // fish box
 cube(fbx-15,top-24,26,18,9,'#e9f2f6');cx.fillStyle='#5fb3c9';cx.fillRect(fbx-15,top-24,26,4);cx.fillStyle='#3d8aa0';cx.fillRect(fbx-4,top-17,6,3);
 hitR(fbx-26,top-44,52,52,'box');badge(S.box.length,fbx+12,top-34);
@@ -978,15 +997,15 @@ cx.fillStyle='#e8c547';cx.beginPath();cx.arc(hx-5,top-13,1.7,0,7);cx.arc(hx+1,to
 if(S.cards.some(c=>c.hungry&&!c.ret)&&S.box.length)badge('!',hx+14,top-58);
 hitR(hx-30,top-74,60,82,'cards');
 // shipyard sign (boat upgrade)
-cx.fillStyle='#4a2f1b';cx.fillRect(ox-2,top-50,4,44);cube(ox-15,top-62,28,20,5,'#a8763f');
-cx.strokeStyle='#2a1606';cx.lineWidth=2;cx.beginPath();cx.moveTo(ox-1,top-58);cx.lineTo(ox-1,top-46);cx.moveTo(ox-6,top-55);cx.lineTo(ox+4,top-55);cx.stroke();cx.beginPath();cx.arc(ox-1,top-50,5,.3,Math.PI-.3);cx.stroke();
-hitR(ox-22,top-70,44,66,'boat');
+cx.fillStyle='#4a2f1b';cx.fillRect(ox-2,upper-31,4,29);cube(ox-15,upper-47,28,20,5,'#a8763f');
+cx.strokeStyle='#2a1606';cx.lineWidth=2;cx.beginPath();cx.moveTo(ox-1,upper-43);cx.lineTo(ox-1,upper-31);cx.moveTo(ox-6,upper-40);cx.lineTo(ox+4,upper-40);cx.stroke();cx.beginPath();cx.arc(ox-1,upper-35,5,.3,Math.PI-.3);cx.stroke();
+hitR(ox-22,upper-53,44,54,'boat');
 // rope to boat
 cx.strokeStyle='#d8c49a';cx.lineWidth=2;cx.beginPath();cx.moveTo(ox,top+4);cx.quadraticCurveTo((ox+bx+76)/2,(top+by)/2+30,bx+76,by-8);cx.stroke();
 // boat
 glow(bx,by-10,110);hitR(bx-84,by-110,168,150,'sail');
-{const m='ออกเรือ',yy=by+66+Math.sin(t*3)*3;cx.font='700 16px Mitr,sans-serif';cx.textAlign='center';const w=cx.measureText(m).width+26,lx=cl(bx,w/2+4,W-w/2-4);
-cx.fillStyle='#b8640f';rr(lx-w/2,yy-17+3,w,32,16);cx.fillStyle='#e8912e';rr(lx-w/2,yy-17,w,32,16);cx.fillStyle='#2a1606';cx.fillText(m,lx,yy+5);hitR(lx-w/2,yy-18,w,36,'sail')}}
+{const m='ออกเรือ',yy=Math.min(H-25,by+58)+Math.sin(t*2)*1.5;cx.font='700 16px Mitr,sans-serif';cx.textAlign='center';const w=cx.measureText(m).width+26,lx=cl(bx,w/2+4,W-w/2-4);
+cx.fillStyle='#945c45';rr(lx-w/2,yy-17+3,w,32,16);cx.fillStyle='#ffca85';rr(lx-w/2,yy-17,w,32,16);cx.fillStyle='#2a1606';cx.fillText(m,lx,yy+5);hitR(lx-w/2,yy-18,w,36,'sail')}}
 function topBar(m){cx.font='500 14px Mitr,sans-serif';cx.textAlign='left';const w=cx.measureText(m).width+24;cx.fillStyle='#08141b99';rr(10,10,w,30,15);cx.fillStyle='#fff';cx.fillText(m,22,30)}
 function lblS(m,x,y){cx.font='500 12px Mitr,sans-serif';cx.textAlign='center';cx.lineWidth=3;cx.lineJoin='round';cx.strokeStyle='#08141bcc';cx.strokeText(m,x,y);cx.fillStyle='#fff';cx.fillText(m,x,y)}
 function tip(m,y){banner(m)}
