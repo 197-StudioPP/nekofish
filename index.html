@@ -73,7 +73,6 @@ h2{font-size:22px;line-height:1.2;margin:0 0 10px}
 @keyframes pop{0%{transform:translateY(9px) scale(.86);opacity:0} 65%{transform:translateY(-2px) scale(1.03)}100%{transform:none;opacity:1}}
 @media(prefers-reduced-motion:reduce){.pop,.knock{animation:none}}
 .hidden{display:none!important}
-button.wait{position:relative;overflow:hidden;opacity:1;background:#d9cbb2;box-shadow:0 3px 0 #b9a888}button.wait::before{content:"";position:absolute;inset:0;background:var(--amb);transform-origin:left;animation:fillb 2.2s linear forwards}button.wait span{position:relative;opacity:.55}@keyframes fillb{from{transform:scaleX(0)}to{transform:scaleX(1)}}@media(prefers-reduced-motion:reduce){button.wait::before{animation:none;transform:scaleX(.5)}}
 .foot{margin-top:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .foot button{font-size:14px;min-height:44px}
 .game-version{position:fixed;right:max(10px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));z-index:2;pointer-events:none;padding:3px 8px;border-radius:12px;background:#142b38e6;color:#fff;font:12px/1.4 Sarabun,system-ui,sans-serif}
@@ -112,7 +111,7 @@ body[data-mode=reel] .game-version{display:none}
 @media(max-height:480px){.tank{height:30dvh;min-height:85px}}
 @media(prefers-reduced-motion:reduce){.tank-fish{animation:none}}
 </style></head><body>
-<div class="game-version">Nekofish · เวอร์ชันทดลอง 29</div>
+<div class="game-version">Nekofish · เวอร์ชันทดลอง 30</div>
 <div class="fig" id="fig"><canvas id="cv"></canvas><div id="toast"></div></div>
 <span id="voyageCatch" hidden></span>
 <div id="modal"><div class="mbox" id="mbox"></div></div>
@@ -322,7 +321,7 @@ else if(r<0.11){T.food+=2;toast('เจอลังลอยน้ำ เสบ�
 else if(r<0.14&&T.hold>0){const l=Math.ceil(T.hold*.15);T.hold-=l;toast('นกนางนวลขโมยปลาไป −'+l+' เหรียญ')}
 waitT=(1.4+Math.random()*3)*(has(2)?.5:1);setMode('wait')}
 function far(){if(T.food<3){toast('เสบียงไม่พอแล่นต่อ');return}
-T.food-=2;T.zone++;T.weather=pick(tides);updateVoyageHud();S.best=Math.max(S.best,T.zone);save();toast('มาถึง'+zname(T.zone)+' · '+T.weather.name)}
+T.food-=2;T.zone++;T.weather=pick(tides);updateVoyageHud();S.best=Math.max(S.best,T.zone);save();toast(zname(T.zone)+' · '+T.weather.name,1000)}
 function strand(){T.hold=Math.floor(T.hold/2);T.fish=T.fish.slice(0,Math.ceil(T.fish.length/2));goHome('เสบียงหมด! ลอยกลับฝั่ง ของเสียไปครึ่งหนึ่ง')}
 function goHome(msg){for(const c of helpers()){c.hungry=true;c.dives=(c.dives||0)+1}
 S.coins+=T.hold;S.amber+=T.amb;let nb=0,over=0;for(const f of T.fish||[]){S.book[f.n]=Math.max(S.book[f.n]||0,f.cm);if(S.box.length<BOXCAP){S.box.push({...f,id:Date.now().toString(36)+ri(1e6).toString(36)});nb++}else{S.coins+=f.v;over+=f.v}}
@@ -340,7 +339,7 @@ const ST=teamST(),sks=helpers().slice(0,3).map(c=>({k:TR[c.a].sk,n:TR[c.a].skn,c
 if((S.reels||0)<3)R.sp*=.78;
  R.cs=makeReelRoute();
 setMode('reel');
-if(tr){const cc=TR.find(x=>x.ctr===TRT[tr].n);toast(item.n+' '+TRT[tr].n+' · '+TRT[tr].d+(cc?' · '+cc.n+'ช่วยได้':''),3000)}}}
+}}
 function roll(){const z=T.zone;
 const w=[['fish',58],['junk',12],['chest',5+z*2],['amber',(3+z*1.4)*(has(3)?1.6:1)],['mon',5+z*3]];
 let s=w.reduce((a,b)=>a+b[1],0)*Math.random(),k='fish';for(const[n,v]of w){if((s-=v)<0){k=n;break}}
@@ -373,13 +372,18 @@ function fishSVG(col,big){
  <ellipse cx="13" cy="3" rx="3" ry="1.4" fill="#efa8ad"/>
  </svg>`
 }
-function showResult(h){sheet='result';mbox.innerHTML=h+'<button class="main wait" id="mClose" disabled><span>ตกต่อ</span></button>';modal.classList.add('on');setTimeout(()=>{const b=$('#mClose');if(b){b.disabled=false;b.classList.remove('wait')}},2200)}
+const catchRevealTime=.62,catchLiftTime=.48;
+function showResult(content){
+ sheet='result';
+ mbox.innerHTML=content+'<button type="button" class="main" id="mClose">ตกต่อ</button>';
+ modal.classList.add('on');
+}
 function statsLine(){const a=[];if(R.maxC>1)a.push('คอมโบสูงสุด x'+R.maxC);if(R.perf)a.push('เป๊ะ '+R.perf+' ครั้ง');if(R.rushBest)a.push('รัวได้ '+R.rushBest+' ครั้ง');if(R.bonus)a.push('โบนัสเหรียญ +'+R.bonus);return a.length?`<p class="hint">${a.join(' · ')}</p>`:''}
 function winReel(){saveCh();{const h=helpers();if(h.length){say(pick(h),pick(['เย้! ได้แล้ว','ปลาใหญ่จัง!','ขอชิมหน่อยนะ','เก่งมากเพื่อน!']),3);bubT=6}}S.reels=(S.reels||0)+1;let h;
-if(item.t==='amber'){T.amb++;T.log.push({n:'อำพันแมว',v:0,g:-1});h=`<h2>ได้อำพันแมว!</h2><svg viewBox="0 0 100 100" width="130" height="130" style="margin:0 auto" aria-hidden="true"><path d="M50 8 C76 10 92 36 89 60 C86 82 68 94 49 93 C27 92 10 76 12 54 C14 30 28 7 50 8Z" fill="#e8912e"/><ellipse cx="38" cy="30" rx="12" ry="7" fill="#fff6" transform="rotate(-30 38 30)"/></svg><p class="hint">เอากลับไปทุบที่ท่าเรือ ข้างในมีแมวรออยู่</p>`}
+if(item.t==='amber'){T.amb++;T.log.push({n:'อำพันแมว',v:0,g:-1});h=`<h2>ได้อำพันแมว!</h2><svg viewBox="0 0 100 100" width="130" height="130" style="margin:0 auto" aria-hidden="true"><path d="M50 8 C76 10 92 36 89 60 C86 82 68 94 49 93 C27 92 10 76 12 54 C14 30 28 7 50 8Z" fill="#e8912e"/><ellipse cx="38" cy="30" rx="12" ry="7" fill="#fff6" transform="rotate(-30 38 30)"/></svg>`}
 else if(item.t==='fish'){const g=(()=>{const r=Math.random()+(R.perf||0)*.02+(R.ST[2]-3)*.015;return r>1.02?4:r>.9?3:r>.72?2:r>.45?1:0})(),v=Math.round(item.v*GM[g]),cm=Math.round((14+item.i*11)*(.75+g*.12+Math.random()*.15));
-T.fish.push({n:item.n,i:item.i,g,cm,v});T.caught++;dailyFishing().count++;updateVoyageHud();S.stat=S.stat||{};S.stat.caught=(S.stat.caught||0)+1;T.log.push({n:item.n,v,g,box:1});h=`<p class="hint" style="margin:0">ตกได้</p><h2>${item.n}</h2><div class="pop" style="margin:0 auto">${fishSVG(fishArtColor(item),1)}</div><div style="display:flex;justify-content:center;gap:10px;align-items:center"><span style="background:${GC[g]};color:#fff;font:600 20px Mitr;padding:2px 14px;border-radius:10px">${GR[g]}</span><span style="font:500 18px Mitr">${cm} ซม.</span></div><p style="font:600 20px Mitr;margin:4px 0;color:var(--amb2)">ราคา ${v} เหรียญ</p><p class="hint" style="margin:0">เก็บเข้าหีบปลาแล้ว กลับท่าเรือไปขายที่ร้านปลา</p>`}
-else{const col=item.t==='chest'?'#e8c547':'#9aa79a';T.hold+=item.v;T.log.push({n:item.n,v:item.v,g:-1});h=`<p class="hint" style="margin:0">ตกได้</p><h2>${item.n}</h2>${item.t==='chest'?`<svg viewBox="0 0 100 80" width="140" height="112" style="margin:0 auto" aria-hidden="true"><rect x="12" y="34" width="76" height="40" rx="6" fill="#8a5a34"/><path d="M12 36 Q50 4 88 36Z" fill="#a8763f"/><rect x="12" y="34" width="76" height="6" fill="${col}"/><rect x="44" y="38" width="12" height="14" rx="2" fill="${col}"/></svg>`:`<div style="margin:0 auto">${fishSVG(col)}</div>`}<p style="font:600 22px Mitr;margin:4px 0;color:var(--amb2)">+${item.v} เหรียญ</p>`}
+T.fish.push({n:item.n,i:item.i,g,cm,v});T.caught++;dailyFishing().count++;updateVoyageHud();S.stat=S.stat||{};S.stat.caught=(S.stat.caught||0)+1;T.log.push({n:item.n,v,g,box:1});h=`<h2>${item.n}</h2><div class="pop" style="margin:0 auto">${fishSVG(fishArtColor(item),1)}</div><div style="display:flex;justify-content:center;gap:10px;align-items:center"><span style="background:${GC[g]};color:#fff;font:600 20px Mitr;padding:2px 14px;border-radius:10px">${GR[g]}</span><span style="font:500 18px Mitr">${cm} ซม.</span></div><p style="font:600 20px Mitr;margin:4px 0;color:var(--amb2)">ราคา ${v} เหรียญ</p>`}
+else{const col=item.t==='chest'?'#e8c547':'#9aa79a';T.hold+=item.v;T.log.push({n:item.n,v:item.v,g:-1});h=`<h2>${item.n}</h2>${item.t==='chest'?`<svg viewBox="0 0 100 80" width="140" height="112" style="margin:0 auto" aria-hidden="true"><rect x="12" y="34" width="76" height="40" rx="6" fill="#8a5a34"/><path d="M12 36 Q50 4 88 36Z" fill="#a8763f"/><rect x="12" y="34" width="76" height="6" fill="${col}"/><rect x="44" y="38" width="12" height="14" rx="2" fill="${col}"/></svg>`:`<div style="margin:0 auto">${fishSVG(col)}</div>`}<p style="font:600 22px Mitr;margin:4px 0;color:var(--amb2)">+${item.v} เหรียญ</p>`}
 LAND={t:0,h:h+statsLine()};R.cs=[];R.rush=0;R.jt=0;R.paw=0;R.fx=0;setMode('land');save()}
 function failReel(why){saveCh();showResult(`<h2>หลุดไปแล้ว…</h2><p>${why}</p><p class="hint">${item.n} · พลังปลาเหลือ ${Math.max(0,Math.round(R.hp/R.max*100))}%</p>`+statsLine());setMode('idle')}
 const TRT={fast:{n:'ว่ายไว',d:'ปลาว่ายเร็วเป็นพิเศษ'},fierce:{n:'ดุร้าย',d:'กระชากสายทุก 7 วินาที'},armor:{n:'เกล็ดแข็ง',d:'ตีปกติเบาลงครึ่งหนึ่ง'},trick:{n:'ขี้หลอก',d:'มีวงปลอมปน'},gold:{n:'ปลาทอง',d:'วงเหรียญให้ 3 เท่า'}};
@@ -391,7 +395,7 @@ function saveCh(){if(T){T.skc=T.skc||{};for(const k of R.sks)T.skc[k.card.id]=k.
 function upReel(dt){autoCast();if(R.ann)R.ann.t-=dt;R.big=(R.big||0)-dt;R.freeze=(R.freeze||0)-dt;R.midas=(R.midas||0)-dt;R.power=(R.power||0)-dt;if(SKFX){SKFX.t+=dt;if(SKFX.t>SKFX.dur)SKFX=null}R.shield-=dt;
 if(R.tr==='fierce'&&R.rush<=0){R.lash-=dt;if(R.lash<=0){R.lash=7;if(R.shield>0){toast('สีสวาดกันไว้ได้!',900)}else{R.hearts--;shake=.4;chg('lash');toast('ปลากระชากสาย! เสียหัวใจ',1000);if(R.hearts<=0){failReel('ปลาดุกระชากสายขาด');return}}}}R.fx-=dt;R.paw-=dt;R.jump-=dt;R.jt-=dt;R.time-=dt;R.clock+=dt;
 if(R.time<=0){failReel('หมดเวลา ปลาดิ้นหลุดไป');return}
-if(R.rush>0){R.rush-=dt;R.pops=R.pops.filter(p=>(p.t-=dt)>0);if(R.rush<=0){toast('รัวได้ '+R.rushN+' ครั้ง!',1100);R.rushBest=Math.max(R.rushBest||0,R.rushN);R.rushCD=6+Math.random()*4}return}
+if(R.rush>0){R.rush-=dt;R.pops=R.pops.filter(p=>(p.t-=dt)>0);if(R.rush<=0){R.rushBest=Math.max(R.rushBest||0,R.rushN);R.rushCD=6+Math.random()*4}return}
 R.rushCD-=dt;if(R.rushCD<=0){R.rush=1.8;R.rushN=0;R.held=null;return}
 R.slow-=dt;
 R.lx+=R.freeze>0?0:R.dir*R.sp*(R.tr==='fast'?1.35:1)*(R.slow>0?.52:1)*(hasCombo('สองตาทิพย์')?.85:1)*dt;
@@ -902,7 +906,7 @@ else if(reeling||landing){
  fx=toX(R.lx);fy=toY(R.lx);
  if(reeling)drawReelTargets(toX,toY);
  if(landing){
-  const lift=ease(cl(LAND.t/1.12,0,1));
+  const lift=ease(cl(LAND.t/catchLiftTime,0,1));
   fx+=(gripX+24-fx)*lift;
   fy+=(gripY-21-fy)*lift-Math.sin(lift*Math.PI)*Math.min(100,H*.18);
  }
@@ -1005,20 +1009,20 @@ function drawPort(bx,by,py){
 // rod rack
 cube(rx-16,upper-50,5,44,4,'#5a3a22');cube(rx+11,upper-50,5,44,4,'#5a3a22');cube(rx-18,upper-41,36,4,4,'#6b4428');
 cx.strokeStyle='#d8c49a';cx.lineWidth=2;for(let i=0;i<Math.min(S.rod,6);i++){cx.beginPath();cx.moveTo(rx-12+i*5,upper-8);cx.lineTo(rx-4+i*5,upper-57);cx.stroke()}
-hitR(rx-24,upper-65,48,69,'rod');
+lblS('คันเบ็ด',rx,upper-2);hitR(rx-24,upper-65,48,72,'rod');
 // fish box
 cube(fbx-15,top-24,26,18,9,'#e9f2f6');cx.fillStyle='#5fb3c9';cx.fillRect(fbx-15,top-24,26,4);cx.fillStyle='#3d8aa0';cx.fillRect(fbx-4,top-17,6,3);
-hitR(fbx-26,top-44,52,52,'box');badge(S.box.length,fbx+12,top-34);
+lblS('หีบปลา',fbx,top+19);hitR(fbx-26,top-44,52,71,'box');badge(S.box.length,fbx+12,top-34);
 // shop
 {const k=sx0;if(S.box.length)glow(k,top-34,42);cube(k-22,top-22,40,18,9,'#9a6a40');cx.fillStyle='#4a2f1b';cx.fillRect(k-21,top-58,3,36);cx.fillRect(k+15,top-58,3,36);
 for(let i=0;i<6;i++){cx.fillStyle=i%2?'#f4efe6':'#d6304e';cx.beginPath();cx.moveTo(k-26+i*8.5,top-60);cx.lineTo(k-26+(i+1)*8.5,top-60);cx.lineTo(k-24+(i+1)*8.5,top-48);cx.lineTo(k-24+i*8.5,top-48);cx.fill()}
 cx.fillStyle='#b5482f';cx.fillRect(k-26,top-63,51,4);for(let i=0;i<3;i++){cx.fillStyle=['#cfe0e8','#e8c547','#9fc7d6'][i];cx.beginPath();cx.ellipse(k-12+i*11,top-26,5,2.4,0,0,7);cx.fill()}
-hitR(k-30,top-72,60,80,'shop')}
+lblS('ร้านปลา',k,top+19);hitR(k-30,top-72,60,99,'shop')}
 // amber crate
 if(S.amber>0)glow(ax,top-18,48);
 cube(ax-20,top-30,38,24,10,'#7a5230');cx.fillStyle='#5a3a20';cx.fillRect(ax-20,top-19,38,3);
 cx.fillStyle='#e8912e';for(let i=0;i<Math.min(S.amber,5);i++){cx.beginPath();cx.ellipse(ax-10+i*7,top-34-(i%2)*2,5.5,4.5,0,0,7);cx.fill()}
-hitR(ax-28,top-48,56,56,'amber');badge(S.amber,ax+20,top-40);
+lblS('อำพัน',ax,top+19);hitR(ax-28,top-48,56,75,'amber');badge(S.amber,ax+20,top-40);
 // cat house
 cube(hx-22,top-40,40,34,12,'#8a5a34');
 cx.fillStyle='#8f3524';cx.beginPath();cx.moveTo(hx-2,top-64);cx.lineTo(hx+10,top-71);cx.lineTo(hx+34,top-48);cx.lineTo(hx+21,top-40);cx.fill();
@@ -1026,11 +1030,11 @@ cx.fillStyle='#b5482f';cx.beginPath();cx.moveTo(hx-26,top-40);cx.lineTo(hx-2,top
 cx.fillStyle='#2a1a10';cx.beginPath();cx.arc(hx-2,top-16,9,Math.PI,0);cx.fill();cx.fillRect(hx-11,top-16,18,10);
 cx.fillStyle='#e8c547';cx.beginPath();cx.arc(hx-5,top-13,1.7,0,7);cx.arc(hx+1,top-13,1.7,0,7);cx.fill();
 if(S.cards.some(c=>c.hungry&&!c.ret)&&S.box.length)badge('!',hx+14,top-58);
-hitR(hx-30,top-74,60,82,'cards');
+lblS('บ้านแมว',hx,top+19);hitR(hx-30,top-74,60,101,'cards');
 // shipyard sign (boat upgrade)
 cx.fillStyle='#4a2f1b';cx.fillRect(ox-2,upper-31,4,29);cube(ox-15,upper-47,28,20,5,'#a8763f');
 cx.strokeStyle='#2a1606';cx.lineWidth=2;cx.beginPath();cx.moveTo(ox-1,upper-43);cx.lineTo(ox-1,upper-31);cx.moveTo(ox-6,upper-40);cx.lineTo(ox+4,upper-40);cx.stroke();cx.beginPath();cx.arc(ox-1,upper-35,5,.3,Math.PI-.3);cx.stroke();
-hitR(ox-22,upper-53,44,54,'boat');
+lblS('อู่เรือ',ox,upper-2);hitR(ox-22,upper-53,44,60,'boat');
 // rope to boat
 cx.strokeStyle='#d8c49a';cx.lineWidth=2;cx.beginPath();cx.moveTo(ox,top+4);cx.quadraticCurveTo((ox+bx+76)/2,(top+by)/2+30,bx+76,by-8);cx.stroke();
 // boat
@@ -1050,7 +1054,7 @@ let last=performance.now();
 function loop(now){try{const dt=Math.min(.05,(now-last)/1000);last=now;t+=dt;shake=Math.max(0,shake-dt);if(BUB)BUB.t-=dt;bubT-=dt;if(bubT<=0&&(mode==='port'||mode==='idle'||mode==='wait')&&PETPOS.length){const p=pick(PETPOS),c=S.cards.find(x=>x.id===p.id);if(c)say(c,c.hungry?pick(['หิวแล้ว…','ขอปลาหน่อย','ท้องร้องแล้วเนี่ย']):pick(CH[c.a].lines));bubT=7+Math.random()*7}flash=Math.max(0,flash-dt);
 if(mode==='wait'){cast=Math.min(1,cast+dt*2.5);waitT-=dt;if(waitT<=0){item=roll();biteT=1.5;setMode('bite')}}
 else if(mode==='bite'){biteT-=dt;if(biteT<=0){toast('ช้าไป ปลาหลุดเบ็ด');setMode('idle')}}
-else if(mode==='reel'){if(!modal.classList.contains('on'))upReel(dt)}else if(mode==='land'){LAND.t+=dt;if(LAND.t>=1.7){setMode('idle');showResult(LAND.h)}}else if(mode==='fight')upFight(dt);
+else if(mode==='reel'){if(!modal.classList.contains('on'))upReel(dt)}else if(mode==='land'){LAND.t+=dt;if(LAND.t>=catchRevealTime){setMode('idle');showResult(LAND.h)}}else if(mode==='fight')upFight(dt);
 if(W)draw();}catch(err){console.error(err)}requestAnimationFrame(loop)}
 
 let reelInput=null;
@@ -1080,7 +1084,7 @@ function crackView(){mbox.innerHTML=`<h2>ทุบอำพัน</h2><p class="
 function openCrack(){openedAt=performance.now();if(!S.amber){toast('ยังไม่มีอำพัน ออกเรือไปหามาก่อน');return}sheet='amber';hits=0;crackView();modal.classList.add('on')}
 function reveal(){sheet='reveal';S.amber--;const c=newCard(),dup=!!c.dup;delete c.dup;if(!dup){S.cards.push(c);if(crewCards().length<CREW)S.crew.push(c.id)}save();const ch=CH[c.a];
 mbox.innerHTML=`<p class="hint" style="margin:0">${dup?'เจอเพื่อนเก่า!':'เพื่อนใหม่!'}</p><h2>${ch.n}${c.rar===3?' ร่างทอง':''}</h2><p style="margin:0;color:#b8640f;font:500 15px Mitr">${dup?'★ เพิ่มเป็น '+c.lv+' ดาว · ค่าพลังเพิ่มขึ้น':ch.ttl}</p><div class="pop" style="max-width:200px;margin:0 auto;width:100%">${cardHTML(c)}</div><p style="margin:0;font:500 16px Mitr">“${pick(ch.lines)}”</p><p class="hint">${perkText(c)}</p>${S.amber?'<button class="main" id="mAgain">ทุบอีกก้อน ('+S.amber+')</button>':''}<button id="mClose">ปิด</button>`}
-mbox.addEventListener('click',e=>{if(performance.now()-openedAt<450)return;const tg=e.target;
+mbox.addEventListener('click',e=>{if(sheet!=='result'&&performance.now()-openedAt<450)return;const tg=e.target;
 if(tg.closest('#amber')){hits++;if(hits>=5){reveal();return}crackView();$('#amber').classList.add('knock');return}
 if(tg.id==='mAgain'){openCrack();return}
 if(tg.closest('#mClose')){closeSheet();return}
