@@ -75,17 +75,9 @@ button.wait{position:relative;overflow:hidden;opacity:1;background:#d9cbb2;box-s
 .foot button{font-size:14px;min-height:44px}
 .game-version{position:fixed;right:max(10px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));z-index:2;pointer-events:none;padding:3px 8px;border-radius:12px;background:#142b38e6;color:#fff;font:12px/1.4 Sarabun,system-ui,sans-serif}
 body{overflow:hidden;overscroll-behavior:none}
-#gameNav{position:fixed;z-index:4;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(540px,calc(100% - 22px));color:#fff7e7}
-#gameNav[hidden],.nav-row[hidden],#voyageCatch[hidden]{display:none}
-.nav-row{display:flex;align-items:center;justify-content:center;gap:7px}
-.nav-row button{flex:1;min-height:44px;padding:5px 9px;font-size:clamp(12px,3vw,15px);border-radius:999px;background:#24434eee;color:#fff7e7;box-shadow:0 4px 12px #152c4650,inset 0 0 0 1px #ffffff27;white-space:nowrap}
-.nav-row button.nav-main{flex:1.65;min-height:52px;background:linear-gradient(#ffdda4,#efaa61);color:#533424;box-shadow:0 4px 0 #92563e,0 7px 18px #162c4355;font-weight:600}
-#voyageCatch{display:table;margin:0 auto 7px;padding:4px 11px;font:500 13px Mitr,sans-serif;border-radius:999px;background:#24434ed9}
+#voyageCatch{position:fixed;z-index:3;bottom:max(8px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);padding:4px 11px;color:#fff7e7;background:#24434ed9;border-radius:999px;font:500 12px Mitr,sans-serif;white-space:nowrap;pointer-events:none}
+#voyageCatch[hidden]{display:none}
 #voyageCatch b{color:#ffdc9a}
-.mbox:has(.port-directory){text-align:left;background:linear-gradient(150deg,#fff7e6,#f5e7d2);color:#294751}
-.port-directory{display:grid;gap:8px}
-.port-directory>button{display:flex;align-items:center;gap:10px;text-align:left;min-height:48px;padding:6px 11px;border-radius:14px;background:#fffdf2;color:#294751}
-.port-directory small{margin-left:auto;color:#55747a;font:400 12px Sarabun,sans-serif}
 .game-version{top:max(7px,env(safe-area-inset-top));bottom:auto}
 .inventory-tabs,.inventory-pages{display:flex;justify-content:center;align-items:center;gap:6px}
 .inventory-tabs button,.inventory-pages button{min-height:40px;padding:3px 8px;font-size:13px;flex:1}
@@ -102,22 +94,9 @@ body{overflow:hidden;overscroll-behavior:none}
 @keyframes tank-drift{to{transform:translate(17px,-6px)}}
 @media(prefers-reduced-motion:reduce){.tank-fish{animation:none}}
 </style></head><body>
-<div class="game-version">Nekofish · เวอร์ชันทดลอง 26</div>
+<div class="game-version">Nekofish · เวอร์ชันทดลอง 27</div>
 <div class="fig" id="fig"><canvas id="cv"></canvas><div id="toast"></div></div>
-<nav id="gameNav" aria-label="เมนูเกม">
- <span id="voyageCatch" hidden></span>
- <div id="portNav" class="nav-row">
-  <button type="button" class="nav-main" data-nav="sail">ออกเรือ</button>
-  <button type="button" data-nav="cards">บ้านแมว</button>
-  <button type="button" data-nav="directory">จัดการท่าเรือ</button>
- </div>
- <div id="seaNav" class="nav-row" hidden>
-  <button type="button" class="nav-main" data-nav="cast">ตกปลา</button>
-  <button type="button" data-nav="supplyBag">กระเป๋า</button>
-  <button type="button" data-nav="far">ไปต่อ</button>
-  <button type="button" data-nav="home">กลับท่า</button>
- </div>
-</nav>
+<span id="voyageCatch" hidden></span>
 <div id="modal"><div class="mbox" id="mbox"></div></div>
 <script>
 {
@@ -208,14 +187,10 @@ let LAND=null,mode='port',T=null,R=null,F=null,item=null,waitT=0,biteT=0,holding
 function toast(m,ms=1800){const el=$('#toast');el.style.top=(mode==='reel'||mode==='fight'||mode==='land')?'128px':'52px';el.textContent=m;el.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('on'),ms)}
 
 let sheet=null;
-const gameNav=$('#gameNav'),voyageCatch=$('#voyageCatch');
+const voyageCatch=$('#voyageCatch');
 function updateVoyageHud(){
- const atPort=mode==='port',atSea=mode==='idle'&&!!T;
- gameNav.hidden=!atPort&&!atSea;
- $('#portNav').hidden=!atPort;
- $('#seaNav').hidden=!atSea;
- voyageCatch.hidden=!atSea;
- if(!atSea)return;
+ voyageCatch.hidden=mode!=='idle'||!T;
+ if(voyageCatch.hidden)return;
  voyageCatch.innerHTML='จุด '+T.zone+' · เสบียง '+T.food+' · ปลา <b>'+T.caught+'</b> ตัว'+(T.caught!==T.fish.length?' · เหลือ '+T.fish.length:'');
 }
 function openVoyageBag(cat){
@@ -270,13 +245,6 @@ function dailyFishing(){
  if(S.dailyFishing?.day!==day)S.dailyFishing={day,count:0,claimed:false};
  return S.dailyFishing;
 }
-gameNav.addEventListener('click',e=>{
- const button=e.target.closest('[data-nav]');
- if(!button||modal.classList.contains('on'))return;
- const action=button.dataset.nav;
- if(['gear','aquarium','quest','directory'].includes(action))openSheet(action);
- else act(action);
-});
 function renderAquarium(){
  S.tank??=[];
  const species=FISH.filter(([name])=>S.book[name]).length;
@@ -290,19 +258,7 @@ function renderAquarium(){
  ${milestone?`<button id="collectionPrize" data-milestone="${milestone}">รับรางวัลสมุดปลา +${milestone*10} เหรียญ</button>`:''}
  <button id="mClose">ปิด</button>`;
 }
-const portDirectory=[
- ['amber','ทุบอำพัน','รับแมว'],
- ['box','หีบปลา','ดูของที่จับได้'],
- ['shop','ร้านปลา','ขายปลา'],
- ['gear','อัปเกรด','คันเบ็ดและเรือ'],
- ['aquarium','ตู้ปลา','เลี้ยงและสะสม'],
- ['quest','ภารกิจ','รับรางวัล']
-];
 function renderSheet(){
-if(sheet==='directory'){
- mbox.innerHTML=`<h2>จัดการท่าเรือ</h2><div class="port-directory">${portDirectory.map(([key,title,detail])=>`<button type="button" data-directory="${key}">${title}<small>${detail}</small></button>`).join('')}</div><button id="mClose">กลับท่าเรือ</button>`;
- return;
-}
 if(sheet==='aquarium'){renderAquarium();return}
 if(sheet==='gear'){
  mbox.innerHTML=`<h2>อัปเกรด</h2><button type="button" data-gear="rod">คันเบ็ด Lv.${S.rod}</button><button type="button" data-gear="boat">อู่เรือ Lv.${S.boat}</button><button id="mClose">ปิด</button>`;
@@ -356,14 +312,14 @@ const tot=T.hold,am=T.amb;T=null;save();setMode('port');
 if(!lg.length&&!msg&&!tot&&!am){toast('กลับถึงท่าเรือ',1200);const u=checkUnlocks();if(u)setTimeout(()=>showUnlock(u),300);return}
 sheet='result';mbox.innerHTML=`<h2>สรุปรอบนี้</h2>${msg?`<p>${msg}</p>`:''}<div style="text-align:left;max-height:40vh;overflow:auto">${rows}</div>${nb?`<p style="font:600 19px Mitr;margin:6px 0">ปลาเข้าหีบ ${nb} ตัว</p>`:''}${over?`<p class="hint">หีบเต็ม ขายปลาที่เกินให้อัตโนมัติ +${over}</p>`:''}${tot?`<p style="font:600 20px Mitr;margin:6px 0;color:var(--amb2)">เหรียญจากหีบสมบัติและอื่น ๆ +${tot}</p>`:''}${am?`<p>อำพันแมว ${am} ก้อน รอให้ทุบที่ลังอำพัน</p>`:''}<button class="main" id="mClose">กลับท่าเรือ</button>`;modal.classList.add('on')}
 function hook(){
-if(mode==='wait'){if(cast>=1)toast('ยังก่อน รอให้ทุ่นจม',900);return}
+if(mode==='wait')return;
 if(mode!=='bite')return;
 if(item.t==='mon'){F={hp:item.hp,max:item.hp,ph:3,st:'idle',t:1.1,wt:0,crit:false,cd:0,flash:0};setMode('fight');toast(item.n+'โผล่ขึ้นมา!')}
 else{const d=Math.min(.9,item.d)*((S.reels||0)<3?.5:1),tm=15+d*10;
 const ST=teamST(),sks=helpers().slice(0,3).map(c=>({k:TR[c.a].sk,n:TR[c.a].skn,c:TR[c.a].c,card:c,ch:(T&&T.skc&&T.skc[c.id])||0}));const tr=(item.t==='fish'||item.t==='chest')&&Math.random()<.3+d*.5?pick(['fast','fierce','armor','trick','gold']):null;R={d,ST,sks,tr,armor:tr==='armor',lash:7,shield:0,sk:0,slow:0,auto:0,sp:2.8+d*2.4,dir:1,flip:.8,rush:0,rushCD:4+Math.random()*3,rushN:0,cs:[],sT:.4,lx:-3.2,lz:LZ,ang:0,hp:4+Math.round(d*6),max:0,hearts:(ST[3]>=8?4:3)+(hasCombo('ราชากับกัปตัน')?1:0),maxH:(ST[3]>=8?4:3)+(hasCombo('ราชากับกัปตัน')?1:0),time:tm+ST[3]*.5,tm:tm+ST[3]*.5,combo:0,fx:0,ok:0,paw:0,px:0,pz:LZ,pops:[],jump:0,judge:'',jt:0,clock:0,bi:.6};R.max=R.hp;
 if((S.reels||0)<3)R.sp*=.78;
  R.cs=makeReelRoute();
-setMode('reel');if(!S.seenHoldReel){S.seenHoldReel=1;save();sheet='intro';openedAt=performance.now();mbox.innerHTML=`<h2>วิธีสู้ปลา</h2><div style="text-align:left;display:grid;gap:10px"><p style="margin:0"><b>แตะจอ</b> หรือกด Space ตามวงที่เรียงไว้บนผิวน้ำ กดเมื่อปลาว่ายเข้าวงสีทอง ถ้ากดตรงกลางจะได้ <b>เป๊ะ!</b> วง «ค้าง» ให้กดค้างจนขึ้น «ปล่อย!»</p>${R.sks.length?'<p style="margin:0"><b>แมวบนเรือ</b> ชาร์จพลังระหว่างสู้ เต็มเมื่อไหร่จะ<b>ใช้ทักษะเองอัตโนมัติ</b> แล้วขึ้นป้ายบอกว่าทำอะไร</p>':''}</div><button class="main" id="mClose">เริ่มเลย</button>`;modal.classList.add('on')}{const ac=activeCombos();if(ac.length&&!tr)toast('คู่หู: '+ac.map(c=>c[2]).join(', '),1800)}
+setMode('reel');
 if(tr){const cc=TR.find(x=>x.ctr===TRT[tr].n);toast(item.n+' '+TRT[tr].n+' · '+TRT[tr].d+(cc?' · '+cc.n+'ช่วยได้':''),3000)}}}
 function roll(){const z=T.zone;
 const w=[['fish',58],['junk',12],['chest',5+z*2],['amber',(3+z*1.4)*(has(3)?1.6:1)],['mon',5+z*3]];
@@ -567,11 +523,13 @@ function drawReelPrompt(x,y){
  const rush=R.rush>0,ready=!!onC(),recent=R.jt>0;
  const target=onC(),held=R.held?.circle===target&&!!target;
  const release=held&&(R.lx-target.x)*R.dir>=target.r*.06&&R.clock-R.held.started>=.09;
- const text=rush?'รัวเลย!':held?(release?'ปล่อย!':'ค้างไว้…'):target?.hold?'กดค้าง!':ready?'กดเลย!':recent?R.judge:'รอให้ปลาเข้าวง';
- const color=rush||ready?'#ffe09a':recent?R.ok?'#b6f3d8':'#ffc7c6':'#eef9ec';
- const w=rush||ready?98:132;
+ if(rush)return;
+ const text=held?(release?'ปล่อย!':'…'):target?.hold?'ค้าง':recent?R.judge:'';
+ if(!text||ready&&!target?.hold&&!recent)return;
+ const color=held||target?.hold?'#ffe09a':R.ok?'#b6f3d8':'#ffc7c6';
+ const w=92;
  x=cl(x,w/2+6,W-w/2-6);
- const top=y-64-Math.sin(t*7)*(rush||ready?3:0);
+ const top=y-64-Math.sin(t*7)*(held?2:0);
  cx.fillStyle=color;rr(x-w/2,top,w,31,12);
  cx.beginPath();cx.moveTo(x-6,top+29);cx.lineTo(x+6,top+29);cx.lineTo(x,top+38);cx.fill();
  cx.fillStyle='#254956';cx.font='600 14px Mitr,sans-serif';cx.textAlign='center';
@@ -594,7 +552,6 @@ function drawReelStatus(){
   if(p>0){cx.fillStyle='#ffe09a';rr(-w/2+12,15,(w-24)*p,8,4)}
   cx.restore();
  }
- else banner((onC()?.hold?'กดค้างแล้วปล่อยตามป้าย':onC()?'แตะเลย / Space':'แตะหรือกด Space ตอนปลาเข้าวง')+(R.combo>1?' · คอมโบ ×'+R.combo:''),!!onC());
  if(R.ann?.t>0){
   cx.fillStyle='#254956';rr(left,76,width,30,12);
   cx.fillStyle='#fff4db';cx.fillText(R.ann.n+' · '+R.ann.d,W/2,96,width-16);
@@ -614,7 +571,7 @@ if(F.st==='wind'){PA.crouch=1;F.st='idle';F.t=.8+Math.random();F.crit=true;toast
 function loseFight(){const cs=crewCards(),L=cs.length?pick(cs):null;T.food=Math.max(0,T.food-2);
 if(L){L.lives--;if(L.lives<=0){L.ret=1;S.crew=S.crew.filter(id=>id!==L.id);toast(L.n+' ใช้ครบ 9 ชีวิตแล้ว ขึ้นกำแพงอนุสรณ์',3000)}else toast(L.n+' บาดเจ็บ เสียไป 1 ชีวิต (เหลือ '+L.lives+')',2400)}else toast('แพ้! เสบียงหายไป 2',1800)
 save();setMode('idle')}
-function act(a){({sail,cast:doCast,far,supplyBag:()=>openVoyageBag(),home:()=>goHome(),hook,hold:strike,hit,dodge,amber:openCrack,box:()=>openSheet('box'),shop:()=>openSheet('shop'),cards:()=>openSheet('cards'),rod:()=>openSheet('rod'),boat:()=>openSheet('boat')})[a]?.()}
+function act(a){({sail,cast:doCast,far,aquarium:()=>openSheet('aquarium'),quest:()=>openSheet('quest'),supplyBag:()=>openVoyageBag(),home:()=>goHome(),hook,hold:strike,hit,dodge,amber:openCrack,box:()=>openSheet('box'),shop:()=>openSheet('shop'),cards:()=>openSheet('cards'),rod:()=>openSheet('rod'),boat:()=>openSheet('boat')})[a]?.()}
 
 const cv=$('#cv'),fig=$('#fig');const cx=cv.getContext('2d');let W=0,H=0;
 const fit=()=>{const r=fig.getBoundingClientRect(),d=Math.min(2,devicePixelRatio||1);W=r.width;H=r.height;cv.width=W*d;cv.height=H*d;cx.setTransform(d,0,0,d,0,0)};
@@ -770,7 +727,7 @@ function drawSupplyBoat(x,y){
  cx.fillStyle='#e2aa68';rr(-12,-19,24,17,4);
  cx.fillStyle='#906347';rr(-3,-14,6,6,2);
  cx.restore();
- lbl('เรือเสบียง · กระเป๋า',x,y+40);
+ lbl('กระเป๋า',x,y+40);
  if(mode==='idle')hitR(x-55,y-25,110,71,'supplyBag');
 }
 let sea3D,seaLoading=false;
@@ -944,7 +901,7 @@ if(landing){
 if(!landing&&mode!=='idle'&&!reeling&&(mode!=='wait'||cast>=1)){cx.strokeStyle='#ffffff';cx.lineWidth=1.2;for(let i=0;i<2;i++){const p=(t*(mode==='bite'?1.8:.6)+i/2)%1;cx.globalAlpha=(1-p)*.5;cx.beginPath();cx.ellipse(fx,fy+4,6+p*26,2+p*7,0,0,7);cx.stroke()}cx.globalAlpha=1}
 if(!reeling&&!landing){cx.strokeStyle='#222';cx.lineWidth=1.5;cx.beginPath();cx.moveTo(fx,fy-6);cx.lineTo(fx,fy-12);cx.stroke();
 cx.fillStyle='#f6f3ee';cx.beginPath();cx.arc(fx,fy,6.5,0,7);cx.fill();cx.fillStyle='#e23b3b';cx.beginPath();cx.arc(fx,fy,6.5,Math.PI,0);cx.fill();cx.fillStyle='#ffffffb0';cx.beginPath();cx.arc(fx-2.2,fy-2.5,1.8,0,7);cx.fill();}
-if(mode==='bite'){const lab='!'+(has(0)?' '+item.n:'');cx.font='600 18px Mitr,sans-serif';const tw=cx.measureText(lab).width;cx.fillStyle='#fff';rr(fx-tw/2-10,fy-50,tw+20,30,10);cx.fillStyle=item.t==='mon'&&has(0)?'#c0304a':'#1d2a30';cx.textAlign='center';cx.fillText(lab,fx,fy-29)}
+if(mode==='bite'){const lab='!';cx.font='600 18px Mitr,sans-serif';const tw=cx.measureText(lab).width;cx.fillStyle='#fff';rr(fx-tw/2-10,fy-50,tw+20,30,10);cx.fillStyle=item.t==='mon'&&has(0)?'#c0304a':'#1d2a30';cx.textAlign='center';cx.fillText(lab,fx,fy-29)}
 }
 if(fight&&F.catHit>0){const mx=W*.72,my=hz+(H-hz)*.35,c1=lead()?TR[lead().a].c:'#e59a4a';cx.globalAlpha=Math.min(1,F.catHit*3);cx.fillStyle=c1;cx.strokeStyle=sh(c1,-.45);cx.lineWidth=2;const px=mx-24,py=my-40+(.35-F.catHit)*60;cx.beginPath();cx.ellipse(px,py,11,9,0,0,7);cx.fill();cx.stroke();for(let i=0;i<4;i++){cx.beginPath();cx.arc(px-10+i*6.7,py-11-(i%3?3:0),4,0,7);cx.fill();cx.stroke()}cx.globalAlpha=1}
 if(fight){const mx=W*.72,my=hz+(H-hz)*.35,s=F.st==='wind'?1.08+Math.sin(t*8)*.05:1+Math.sin(t*2.6)*.025,r=Math.min(46,W*.09)*s;
@@ -965,7 +922,7 @@ cx.fillStyle='#00000088';rr(mx-52,my-r-32,104,12,6);cx.fillStyle='#ff5c7a';rr(mx
 cx.font='500 22px Mitr,sans-serif';cx.textAlign='left';cx.fillStyle='#ff6b81';cx.textAlign='center';cx.fillText('♥'.repeat(Math.max(0,F.ph))+'♡'.repeat(Math.max(0,3-Math.max(0,F.ph))),bx,by-112);
 if(F.crit){cx.fillStyle='#ffe066';cx.font='500 15px Mitr,sans-serif';cx.textAlign='center';cx.fillText('ตีแรง ×3 พร้อม',bx,by-134)}}
 if(fight){const mx=W*.72,my=hz+(H-hz)*.35;hitR(mx-60,my-70,120,140,'hit');hitR(bx-34,by-110,68,120,'dodge')}
-if(mode==='bite')banner('ปลากินเบ็ด! แตะเลย / Space',true);
+
 drawBubble();topBar(T?zname(T.zone)+' · เสบียง '+T.food+' · ของ '+T.hold+(T.amb?' · อำพัน '+T.amb:''):'เหรียญ '+S.coins+' · ไกลสุด '+zname(S.best));
 cx.restore()}
 const hitR=(x,y,w,h,a)=>SP.push({x,y,w,h,a});
@@ -982,6 +939,19 @@ for(let x=6;x<W;x+=30){cx.fillStyle='#3e2715';cx.fillRect(x,top+8,8,46);cx.fillS
 cx.fillStyle='#8a5a34';cx.beginPath();cx.moveTo(-10,top);cx.lineTo(W+10,top);cx.lineTo(W+10,top-16);cx.lineTo(-10,top-16);cx.fill();
 cx.strokeStyle='#00000028';cx.lineWidth=1.2;for(let x=10;x<W;x+=20){cx.beginPath();cx.moveTo(x,top);cx.lineTo(x+8,top-16);cx.stroke()}
 cx.fillStyle='#5a3a22';cx.fillRect(-10,top,W+20,9);
+// The aquarium and notice board sit behind the objects on the dock.
+const shelfY=Math.max(42,top-118),tankX=W*.29,noticeX=W*.69;
+cx.fillStyle='#91d3c7';rr(tankX-22,shelfY-15,44,29,8);
+cx.fillStyle='#e3f5dd';rr(tankX-19,shelfY-13,38,4,2);
+cx.fillStyle='#eaa95f';cx.beginPath();cx.ellipse(tankX+3,shelfY,8,4,0,0,7);
+cx.moveTo(tankX-4,shelfY);cx.lineTo(tankX-11,shelfY-4);cx.lineTo(tankX-11,shelfY+4);cx.fill();
+lblS('ตู้ปลา',tankX,shelfY+27);hitR(tankX-27,shelfY-22,54,53,'aquarium');
+cx.fillStyle='#9e7050';rr(noticeX-20,shelfY-17,40,32,5);
+cx.fillStyle='#ffebbc';rr(noticeX-13,shelfY-12,26,22,3);
+cx.fillStyle='#8b684f';for(let i=0;i<3;i++)rr(noticeX-8,shelfY-7+i*5,13+i%2*3,2,1);
+const task=S.dailyFishing;
+if(task?.count>=3&&!task.claimed)badge('!',noticeX+20,shelfY-18);
+lblS('ภารกิจ',noticeX,shelfY+27);hitR(noticeX-26,shelfY-24,52,55,'quest');
 // rod rack
 cube(rx-16,top-78,5,72,4,'#5a3a22');cube(rx+11,top-78,5,72,4,'#5a3a22');cube(rx-18,top-68,36,4,4,'#6b4428');
 cx.strokeStyle='#d8c49a';cx.lineWidth=2;for(let i=0;i<Math.min(S.rod,6);i++){cx.beginPath();cx.moveTo(rx-12+i*5,top-8);cx.lineTo(rx-4+i*5,top-94);cx.stroke()}
@@ -1015,7 +985,7 @@ hitR(ox-22,top-70,44,66,'boat');
 cx.strokeStyle='#d8c49a';cx.lineWidth=2;cx.beginPath();cx.moveTo(ox,top+4);cx.quadraticCurveTo((ox+bx+76)/2,(top+by)/2+30,bx+76,by-8);cx.stroke();
 // boat
 glow(bx,by-10,110);hitR(bx-84,by-110,168,150,'sail');
-{const m='⛵ ออกเรือตกปลา',yy=by+66+Math.sin(t*3)*3;cx.font='700 16px Mitr,sans-serif';cx.textAlign='center';const w=cx.measureText(m).width+26,lx=cl(bx,w/2+4,W-w/2-4);
+{const m='ออกเรือ',yy=by+66+Math.sin(t*3)*3;cx.font='700 16px Mitr,sans-serif';cx.textAlign='center';const w=cx.measureText(m).width+26,lx=cl(bx,w/2+4,W-w/2-4);
 cx.fillStyle='#b8640f';rr(lx-w/2,yy-17+3,w,32,16);cx.fillStyle='#e8912e';rr(lx-w/2,yy-17,w,32,16);cx.fillStyle='#2a1606';cx.fillText(m,lx,yy+5);hitR(lx-w/2,yy-18,w,36,'sail')}}
 function topBar(m){cx.font='500 14px Mitr,sans-serif';cx.textAlign='left';const w=cx.measureText(m).width+24;cx.fillStyle='#08141b99';rr(10,10,w,30,15);cx.fillStyle='#fff';cx.fillText(m,22,30)}
 function lblS(m,x,y){cx.font='500 12px Mitr,sans-serif';cx.textAlign='center';cx.lineWidth=3;cx.lineJoin='round';cx.strokeStyle='#08141bcc';cx.strokeText(m,x,y);cx.fillStyle='#fff';cx.fillText(m,x,y)}
@@ -1064,12 +1034,6 @@ mbox.addEventListener('click',e=>{if(performance.now()-openedAt<450)return;const
 if(tg.closest('#amber')){hits++;if(hits>=5){reveal();return}crackView();$('#amber').classList.add('knock');return}
 if(tg.id==='mAgain'){openCrack();return}
 if(tg.closest('#mClose')){closeSheet();return}
-if(sheet==='directory'){
- const action=tg.closest('[data-directory]')?.dataset.directory;
- if(action==='amber')openCrack();
- else if(portDirectory.some(([key])=>key===action))openSheet(action);
- return;
-}
 if(sheet==='gear'){
  const gear=tg.closest('[data-gear]')?.dataset.gear;
  if(gear==='rod'||gear==='boat')openSheet(gear);
