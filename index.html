@@ -88,7 +88,7 @@ body{overflow:hidden;overscroll-behavior:none}
 .inventory-slot.empty{opacity:.45;border-style:dashed}
 @media(max-height:520px){.mbox:has(.inventory-tabs){padding:10px;gap:5px}.inventory-slot{min-height:65px}.inventory-slot svg{height:22px}}
 </style></head><body>
-<div class="game-version">Nekofish · เวอร์ชันทดลอง 21</div>
+<div class="game-version">Nekofish · เวอร์ชันทดลอง 22</div>
 <div class="fig" id="fig"><canvas id="cv"></canvas><div id="toast"></div></div>
 <div id="voyageHud" hidden><span id="voyageCatch"></span></div>
 <div id="modal"><div class="mbox" id="mbox"></div></div>
@@ -369,7 +369,9 @@ if(R.hp<=0)winReel();return}
 if(R.fx>.1)return;const c=onC();
 if(c&&c.fake){R.cs=R.cs.filter(o=>o!==c);R.combo=0;R.hearts--;R.ok=0;R.fx=.25;shake=.2;R.judge='วงปลอม!';R.jt=.6;chg('miss');if(R.hearts<=0)failReel('โดนวงปลอมหลอกจนสายขาด');return}
 if(c){c.need--;if(c.need<=0)R.cs=R.cs.filter(o=>o!==c);const center=R.auto>0||Math.abs(c.x-R.lx)<c.r*(hasCombo('ขาวดำ')?.5:.35);if(R.auto>0)R.auto--;R.pops.push({x:c.x,z:LZ,t:.45});
-const dmg=(center?1.5:1)*(1+Math.min(R.combo,8)*.15)*(.7+R.ST[0]*.07);R.combo++;chg('hit',{center,bonus:c.type!=='n'});R.hp-=dmg*(R.armor?.5:1)*(R.power>0?2:1)*(hasCombo('หมัดคู่')?1.2:1);R.ok=1;R.fx=.25;R.paw=.3;R.px=c.x;R.pz=LZ;R.jump=.6;R.judge=center?'เป๊ะ!':'ดี';R.jt=.5;if(center)R.perf=(R.perf||0)+1;R.maxC=Math.max(R.maxC||0,R.combo);
+const dmg=(center?1.5:1)*(1+Math.min(R.combo,8)*.15)*(.7+R.ST[0]*.07);R.combo++;chg('hit',{center,bonus:c.type!=='n'});const force=dmg*(R.armor?.5:1)*(R.power>0?2:1)*(hasCombo('หมัดคู่')?1.2:1);
+R.hp-=force;
+R.pops[R.pops.length-1].feedback={force,center,combo:R.combo};R.ok=1;R.fx=.25;R.paw=.3;R.px=c.x;R.pz=LZ;R.jump=.6;R.judge=center?'เป๊ะ!':'ดี';R.jt=.5;if(center)R.perf=(R.perf||0)+1;R.maxC=Math.max(R.maxC||0,R.combo);
 if(c.type==='heart'){R.hearts=Math.min(R.maxH,R.hearts+1);toast('สายเบ็ดฟื้น +1',700)}
 else if(c.type==='time'){R.time+=4;R.tm=Math.max(R.tm,R.time);toast('เวลา +4 วินาที',700)}
 else if(c.type==='coin'){const g=(5+T.zone*4)*(R.tr==='gold'?3:1)*(hasCombo('เสียงทอง')?2:1);T.hold+=g;R.bonus=(R.bonus||0)+g;toast('เหรียญ +'+g,700)}
@@ -445,6 +447,14 @@ function drawReelTargets(toX,toY){
    const a=Math.PI*(.1+i*.13),distance=8+progress*(22+i%2*8);
    cx.fillStyle=i%2?'#bdf5e5':'#ffe09a';
    cx.beginPath();cx.arc(x+Math.cos(a)*distance,y-Math.sin(a)*distance+progress*progress*15,2.4-progress,0,7);cx.fill();
+  }
+  if(splash.feedback){
+   const {force,center,combo}=splash.feedback;
+   const label='−'+Number(force.toFixed(1))+(combo>1?'   ×'+combo:'');
+   const textX=cl(x,52,W-52),textY=y+29+progress*19;
+   cx.font=(center?'600 20':'500 16')+'px Mitr,sans-serif';cx.textAlign='center';
+   cx.strokeStyle='#254956';cx.lineWidth=3.5;cx.lineJoin='round';
+   cx.strokeText(label,textX,textY);cx.fillStyle=center?'#ffe09a':'#e0fff2';cx.fillText(label,textX,textY);
   }
   cx.restore();
  }
