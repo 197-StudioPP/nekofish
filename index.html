@@ -79,10 +79,18 @@ body{overflow:hidden;overscroll-behavior:none}
 #voyageHud[hidden]{display:none}
 #voyageHud button{min-height:40px;padding:4px 9px;border-radius:11px;font-size:13px}
 #voyageHud b{color:#ffdc9a}
+.inventory-tabs,.inventory-pages{display:flex;justify-content:center;align-items:center;gap:6px}
+.inventory-tabs button,.inventory-pages button{min-height:40px;padding:3px 8px;font-size:13px;flex:1}
+.inventory-tabs button[aria-pressed=true]{background:#ffe2a8;color:#493424}
+.inventory-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.inventory-slot{background:var(--card);border:1px solid var(--line);border-radius:12px;display:grid;place-items:center;align-content:center;min-height:80px;font-size:13px;padding:3px;line-height:1.3}
+.inventory-slot svg{width:min(100%,56px);height:31px}
+.inventory-slot.empty{opacity:.45;border-style:dashed}
+@media(max-height:520px){.mbox:has(.inventory-tabs){padding:10px;gap:5px}.inventory-slot{min-height:65px}.inventory-slot svg{height:22px}}
 </style></head><body>
-<div class="game-version">Nekofish · เวอร์ชันทดลอง 18</div>
+<div class="game-version">Nekofish · เวอร์ชันทดลอง 19</div>
 <div class="fig" id="fig"><canvas id="cv"></canvas><div id="toast"></div></div>
-<div id="voyageHud" hidden><span id="voyageCatch"></span><button type="button" id="voyageFeed">ให้อาหารแมว</button></div>
+<div id="voyageHud" hidden><span id="voyageCatch"></span><button type="button" id="voyageFeed">กระเป๋าบนเรือ</button></div>
 <div id="modal"><div class="mbox" id="mbox"></div></div>
 <script>
 {
@@ -179,24 +187,45 @@ function updateVoyageHud(){
  if(!T)return;
  voyageCatch.innerHTML='จับได้ <b>'+T.caught+'</b> ตัว'+(T.caught!==T.fish.length?' · เหลือ '+T.fish.length:'');
  const hungry=crewCards().filter(cat=>cat.hungry).length;
- voyageFeed.textContent='ให้อาหารแมว'+(hungry?' · หิว '+hungry:'');
+ voyageFeed.textContent='กระเป๋าบนเรือ'+(hungry?' · หิว '+hungry:'');
  voyageFeed.disabled=mode!=='idle';
 }
 voyageFeed.addEventListener('click',()=>{
- if(T&&mode==='idle'&&!modal.classList.contains('on'))openSheet('voyage-feed');
+ if(T&&mode==='idle'&&!modal.classList.contains('on')){
+  inventoryTab='catch';inventoryPage=0;openSheet('voyage-feed');
+ }
 });
 function setMode(m){mode=m;updateVoyageHud();if(m==='port'&&sheet)renderSheet()}
 const CREW=3;
 const rodCost=()=>40*S.rod*S.rod,boatCost=()=>70*S.boat*S.boat;
 const perksHTML=()=>{const ac=activeCombos().map(c=>c[2]);return '<div><b>คู่หู</b> พาแมวคู่นี้ขึ้นเรือด้วยกันได้โบนัส</div>'+COMBO.map(([a,b,n,d])=>`<div style="${ac.includes(n)?'color:#3aa35a;font-weight:600':'opacity:.7'}">${ac.includes(n)?'✓ ':''}${CH[a].n} + ${CH[b].n} · ${n}: ${d}</div>`).join('')+'<div style="margin-top:6px">แมวบนเรือที่<b>อิ่ม</b>เท่านั้นที่ช่วยและนับคู่หู</div>'};
-function renderSheet(){
-if(sheet==='voyage-feed'){
- const fishCount=(T?.fish.length||0)+S.box.length;
- mbox.innerHTML=`<h2>ให้อาหารแมว</h2><p class="hint">ปลาบนเรือ ${T?.fish.length||0} ตัว · ในหีบ ${S.box.length} ตัว</p>
- ${crewCards().map(cat=>`<button type="button" data-feed="${cat.id}" ${!fishCount||(!cat.hungry&&(cat.bond||0)>=5)?'disabled':''}>${CH[cat.a].n} · ${cat.hungry?'หิว':'อิ่ม'} · ป้อนปลา 1 ตัว</button>`).join('')}
- ${fishCount?'':'<p class="hint">ยังไม่มีปลาให้แมว ลองตกปลาก่อน</p>'}<button id="mClose" class="main">กลับไปตกปลา</button>`;
- return;
+let inventoryTab='catch',inventoryPage=0;
+function renderVoyageInventory(){
+ const tabs=[['catch','บนเรือ '+T.fish.length],['box','ในหีบ '+S.box.length],['feed','ให้อาหาร']];
+ const tabBar=`<div class="inventory-tabs">${tabs.map(([id,label])=>`<button type="button" data-inventory-tab="${id}" aria-pressed="${id===inventoryTab}">${label}</button>`).join('')}</div>`;
+ let contents;
+ if(inventoryTab==='feed'){
+  const fishCount=T.fish.length+S.box.length;
+  contents=crewCards().map(cat=>`<button type="button" data-feed="${cat.id}" ${!fishCount||(!cat.hungry&&(cat.bond||0)>=5)?'disabled':''}>${CH[cat.a].n} · ${cat.hungry?'หิว':'อิ่ม'} · ป้อน 1 ตัว</button>`).join('');
+  if(!fishCount)contents+='<p class="hint">ยังไม่มีปลาให้แมว ลองตกปลาก่อน</p>';
+ }else{
+  const list=inventoryTab==='catch'?T.fish:S.box;
+  const pageSize=innerHeight<=520?3:6;
+  const count=Math.max(1,Math.ceil(list.length/pageSize));
+  inventoryPage=cl(inventoryPage,0,count-1);
+  const fish=list.slice(inventoryPage*pageSize,(inventoryPage+1)*pageSize);
+  const slots=Array.from({length:pageSize},(_,i)=>{
+   const f=fish[i];
+   return f?`<div class="inventory-slot">${fishSVG(fishArtColor(f))}<b>${f.n}</b><span>เกรด ${GR[f.g]} · ${f.cm} ซม.</span></div>`:'<div class="inventory-slot empty" aria-hidden="true">—</div>';
+  });
+  contents=`<div class="inventory-grid">${slots.join('')}</div>`;
+  if(!list.length)contents+='<p class="hint">ช่องยังว่าง</p>';
+  if(count>1)contents+=`<div class="inventory-pages"><button type="button" data-inventory-page="-1" ${inventoryPage===0?'disabled':''}>ก่อนหน้า</button><span>${inventoryPage+1}/${count}</span><button type="button" data-inventory-page="1" ${inventoryPage===count-1?'disabled':''}>ถัดไป</button></div>`;
+ }
+ mbox.innerHTML=`<h2>กระเป๋าบนเรือ</h2>${tabBar}${contents}<button type="button" id="mClose" class="main">กลับไปตกปลา</button>`;
 }
+function renderSheet(){
+if(sheet==='voyage-feed'){renderVoyageInventory();return}
 if(sheet==='box'||sheet==='shop'){const shop=sheet==='shop',got=FISH.filter(f=>S.book[f[0]]).length,sel=S.box.filter(f=>f.sell),selv=sel.reduce((a,f)=>a+priceOf(f),0);
 const pool=[...S.box].sort((a,b)=>b.g-a.g||b.v-a.v);
 const row=f=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)"><span style="flex:none;width:54px">${fishSVG('#cfe0e8').replace('width="120" height="70"','width="54" height="32"')}</span><span style="flex:1;text-align:left">${f.n} <b style="color:${GC[f.g]}">${GR[f.g]}</b>${f.n===SPECIAL()?' <b style="color:#d6304e">ขายดี</b>':''}<br><span class="hint" style="margin:0">${f.cm} ซม. · ${shop?'ร้านให้ '+priceOf(f):'ราคาประมาณ '+priceOf(f)} เหรียญ</span></span>${!shop?'':`<button data-mark="${f.id}" style="flex:none;min-height:40px;font-size:14px;${f.sell?'background:var(--amb);color:#2a1606;box-shadow:none':''}">${f.sell?'คัดขาย ✓':'เก็บไว้'}</button>`}</div>`;
@@ -804,6 +833,11 @@ if(tg.id==='shopSell'&&sheet==='shop'){const sel=S.box.filter(f=>f.sell),v=sel.r
 if(tg.id==='mUp'){const k=sheet,cost=k==='rod'?rodCost():boatCost();if(S.coins<cost)return;S.coins-=cost;S[k]++;save();renderSheet();toast((k==='rod'?'เบ็ด':'เรือ')+'ระดับ '+S[k]);return}
 if(tg.id==='reset'){if(!resetArm){resetArm=true;tg.textContent='แตะอีกครั้งเพื่อยืนยัน';setTimeout(()=>{resetArm=false;if(tg.isConnected)tg.textContent='ล้างเซฟ'},3000);return}
 try{localStorage.removeItem('nekofish1')}catch(err){}S={coins:0,rod:1,boat:1,amber:1,cards:[],crew:[],best:1,t:Date.now(),box:[],book:{}};resetArm=false;closeSheet();setMode('port');return}
+if(sheet==='voyage-feed'){
+ const tab=tg.closest('[data-inventory-tab]'),page=tg.closest('[data-inventory-page]');
+ if(tab){inventoryTab=tab.dataset.inventoryTab;inventoryPage=0;renderSheet();return}
+ if(page){inventoryPage+=Number(page.dataset.inventoryPage);renderSheet();return}
+}
 const fd=tg.closest('[data-feed]');
 if(fd&&(sheet==='cards'||sheet==='voyage-feed')){
  const atSea=sheet==='voyage-feed',cat=(atSea?crewCards():S.cards).find(x=>x.id===fd.dataset.feed);
